@@ -1,27 +1,58 @@
-Perfect 👍 — here’s the full neatly formatted section you can directly use in your email or document:
+Subject: Proposal for Design Improvements
 
+Dear [Recipient’s Name],
 
----
+I hope this message finds you well. I’ve been reviewing the current design and have identified a few areas where improvements could enhance both the user experience and overall usability of the application. I’d like to propose the following adjustments for your consideration:
 
-Analysis of Missing Components in Proposed Library
+1. Dropdowns in Tables
 
-After reviewing the proposed component library in detail, we identified several key components that are either missing or insufficiently supported — particularly in the area of form elements and common UI patterns. These gaps affect critical parts of the application such as tables, date-time inputs, multi-selects, and notifications. Rebuilding or sourcing these components separately would introduce design inconsistencies, additional development effort, and long-term maintenance challenges. Given the breadth and importance of these components, relying on this library would create more overhead than benefit, making it less suitable for our project needs.
+Current Implementation:
+The destination queues are currently displayed in a table within a dropdown input element, which works due to the multiple items that need to be displayed.
 
-Component	Purpose	Usage in Application	Impact if Missing in Library
+Why Design Improvement is Needed:
+While dropdowns are effective for capturing user inputs, they may not be the most optimal solution for displaying multiple options within a table. This approach can result in a less intuitive experience for the user, as it may not be immediately clear that the dropdown is being used purely for display purposes.
 
-Table	Display structured data in rows and columns, often with sorting, filtering, pagination.	Listing screens such as user list, transaction history, reports.	Building from scratch requires significant effort for advanced features. Using another library may cause design inconsistencies.
-Date-Time Picker	Allow users to select both date and time in one control.	Forms for scheduling, deadlines, event times.	Extending date picker adds complexity and risks inconsistent behavior. External libraries may create UX mismatch with other form inputs.
-Multi-Select Drop-Down	Enable users to select multiple options from a list.	Forms requiring multiple selections (tags, categories, users).	Complex to custom-build (search, chips, keyboard navigation, accessibility). External solutions may not match styling of single-select.
-On-Off Switch	Toggle for binary choices (true/false, enabled/disabled).	Settings pages, preferences, feature toggles.	Simple to build but must align visually with other form controls; mismatches can affect design consistency.
-Alert / Toast	Provide feedback messages (success, error, warning, info).	Across screens: forms, workflows, transactions.	Alerts are simple, but toasts (auto-dismiss, animations) are harder. Inconsistent feedback styling may confuse users.
-Icons (Flag, Trash, Edit, etc.)	Provide visual cues for actions, categories, or status.	Used throughout app: tables, forms, buttons, headers.	Relying on secondary icon sets can cause mismatched styles (line thickness, colors, sizing), reducing overall polish.
+Recommended Approach:
+A more effective approach could be to use a Chip design to display the multiple options. Chips offer a more visual and compact method of showcasing data and can improve readability and interaction.
 
+2. Update Form in Popup
 
-Closing Note
-Considering the above analysis, it becomes clear that the absence of these core components will not only increase development and maintenance effort but also risk inconsistencies in design and user experience. To ensure a smooth development process and deliver a consistent, high-quality application, our recommendation would be to adopt a more comprehensive component library that already provides robust support for these features out of the box.
+Current Implementation:
+The update rule/group code form is currently loaded in a popup.
 
+Why Design Improvement is Needed:
+The update rule form contains at least 14 input fields, and this number could increase with the dynamic addition of elements. Having so many fields in a popup can make it difficult for users to access and complete the form effectively, especially as the content grows.
 
----
+Recommended Approach:
+It might be more effective to place the form on a separate page with clear navigation. This would ensure better organization, allow users to focus on the task at hand, and reduce the cognitive load.
 
-Would you like me to also make a slide-deck friendly version (bullet points instead of paragraphs and table) in case this needs to be presented during the client call?
+3. Update Button Enable/Disable Logic
 
+Current Implementation:
+A common update button is always present at the bottom of the table. The button is enabled when one row is selected, and disabled when no rows or multiple rows are selected.
+
+Why Design Improvement is Needed:
+Currently, users need to interact with the table and update button in a relatively constrained way. Having a single update button that is conditionally enabled or disabled might create confusion, as users are not always certain why it is unavailable.
+
+Recommended Approach:
+One possible solution would be to implement individual edit icons for each row, allowing the user to edit specific items directly without having to select multiple rows. Additionally, close/delete buttons on each row would give users more flexibility and save them extra clicks when they wish to cancel or delete a single item. This would simplify the interaction and provide more intuitive control over individual items.
+
+4. Destination Queues in Rule Form
+
+Current Implementation:
+Currently, the form dynamically adds single-select dropdowns for each additional input.
+
+Why Design Improvement is Needed:
+The dynamic growth of the form as inputs are added can lead to a less predictable user experience. With the increasing complexity, there is also the risk of design inconsistencies, which could negatively impact usability.
+
+Recommended Approach:
+A more efficient solution could be to replace the individual dropdowns with a multi-select dropdown. This would simplify the overall flow by enabling the user to select multiple items at once, reducing visual clutter and improving user interaction.
+
+I believe these changes will enhance the overall user experience and streamline the application’s functionality. I’m open to discussing these suggestions further and would love to hear your thoughts.
+
+Thank you for your time and consideration.
+
+Best regards,
+[Your Full Name]
+[Your Position]
+[Your Contact Information]
