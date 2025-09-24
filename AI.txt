@@ -1,74 +1,45 @@
-That’s a smart approach 👍 — you’ll want to keep the conversation solution-oriented, professional, and non-confrontational. Instead of positioning the client’s chosen library as “unsuitable,” you can frame it as:
-
-It has strengths (acknowledge the client’s preference).
-
-But for our use case, there are gaps that come with risks.
-
-We’d like to explore better alternatives first, keeping their library as a fallback.
-
-
-Here’s how you can frame your talking points diplomatically in the meeting:
-
+Got it 👍 I’ll add that point in a professional, neutral way under the **discussion points** section. Here’s the updated MoM with the new addition included:
 
 ---
 
-Points to Present in the Meeting
+## **Minutes of Meeting (MoM)**
 
-1. Acknowledgment of the Client’s Choice
+**Meeting Title:** Discussion on UI Component Library
+**Date:** \[Insert Date]
+**Attendees:** Client Stakeholder 1, Client Stakeholder 2, Dan (Component Library), \[Your Name], \[Other Internal Team Members]
 
-“We appreciate the suggestion of using [Library Name], and we’ve reviewed it carefully. It has several strong components that can add value.”
+### **Executive Summary**
 
+The meeting focused on evaluating the feasibility of using the client-provided component library for frontend development. Dan from the component library team shared workarounds for missing components, such as customizing the date-time picker, table pagination, and multi-select dropdowns. While these solutions are workable, they may require design adjustments and additional development effort. The client stakeholders confirmed the decision to proceed with the library, with the understanding that extra effort and design flexibility may be needed.
 
+### **Key Discussion Points**
 
-2. Highlight the Identified Gaps
+1. Meeting attended by Client Stakeholder 1, Client Stakeholder 2, and Dan from the component library team.
+2. Dan explained possible workarounds to address gaps in the component library.
+3. **Date-Time Picker** – Can be created by combining the existing date picker with multiple select boxes (e.g., hours, minutes, seconds requiring separate dropdowns).
+4. **Table** – Available as a sub-component within another component; however, pagination will need to be custom developed.
+5. **Multi-Select Dropdown** – Can be achieved using the *ba-filter-checkbox* component, though additional tweaks are needed for value population.
+6. **On-Off Switch** – Recommendation to use a checkbox or radio button as an alternative.
+7. **Alerts/Toasts** – Suggested to use the *ba-message* component.
+8. **Icons** – A wider set of icons exists beyond what is documented. The team can also create new icons on demand with minimal delay.
+9. While these approaches are feasible, they may result in variations in the look and feel of the application. In other words, the design may need to be adjusted to better align with the capabilities of the component library.
+10. Client Stakeholder 1 confirmed the expectation that the client-provided library must be used, even with these limitations.
+11. It was also noted that implementing these workarounds is likely to incur some additional development effort.
+12. Dan mentioned that he can be contacted for any help regarding the usage of the library or for requests related to new component additions, if required.
 
-“In our analysis, we found that some commonly used components, particularly form elements like date-time pickers, multi-selects, and notification systems, are not available or fully supported in the library.”
+### **Decision/Outcome**
 
-“These components are central to our application and appear in multiple critical screens.”
+* Agreed to proceed with the client-provided component library as the base for implementation.
+* Identified workarounds to fill gaps will be applied where required.
+* Acknowledged that additional effort may be needed to implement and maintain certain customizations.
 
+### **Next Steps / Action Items**
 
-
-3. Explain the Risks Neutrally
-
-“Rebuilding these missing components will add additional development and testing effort.”
-
-“There is also a chance of design or behavioral inconsistencies, since custom-built components may not fully align with the out-of-the-box ones.”
-
-“Over time, maintaining these custom components alongside library updates could increase overhead.”
-
-
-
-4. Position User Experience as a Priority
-
-“Form elements and feedback mechanisms are key to a smooth user experience. Even small inconsistencies in these areas may impact usability for end users.”
-
-
-
-5. Present Options Without Closing Doors
-
-“One option is to proceed with [Library Name] and custom-build the missing components, though that comes with the challenges I mentioned.”
-
-“Alternatively, we could consider a more comprehensive library that already provides strong support for these components out of the box, which would reduce development effort and ensure consistency.”
-
-“If required, we can still use [Library Name] as a base and supplement it with another library, but that may create additional integration effort.”
-
-
-
-6. End with a Collaborative Note
-
-“We’d like to align with you on the best approach that balances consistency, user experience, and delivery timelines. Our intent is not to rule out [Library Name] entirely, but to carefully weigh the trade-offs so we choose the most efficient and sustainable path forward.”
-
-
-
-
+1. Development team to evaluate and document the additional effort required for custom implementations.
+2. Work with the design team to ensure a consistent user experience despite adjustments.
+3. Monitor and record any impacts on delivery timelines for stakeholder visibility.
+4. Reach out to Dan when support is needed for using the library or exploring new component additions.
 
 ---
 
-This way, you’re:
-✅ Not rejecting their choice outright.
-✅ Showing you’ve done a thorough analysis.
-✅ Presenting risks factually (not blaming).
-✅ Offering alternatives while keeping the client’s library as a fallback.
-
-Would you like me to also prepare a short opening statement + closing statement you can use verbatim in the meeting to set the tone and wrap up diplomatically?
-
+Would you like me to also draft a **short closing note** you can use when sharing this MoM (something like: “Please review and let me know if I missed anything”)?
