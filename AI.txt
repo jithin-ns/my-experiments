@@ -1,45 +1,185 @@
-Got it 👍 I’ll add that point in a professional, neutral way under the **discussion points** section. Here’s the updated MoM with the new addition included:
+Absolutely 👍 Let’s combine everything we just worked through — Build & Deployment, Unit Testing, and Authentication — into one structured section for your LLD. You can directly drop this into your document.
+
 
 ---
 
-## **Minutes of Meeting (MoM)**
+Build & Deployment
 
-**Meeting Title:** Discussion on UI Component Library
-**Date:** \[Insert Date]
-**Attendees:** Client Stakeholder 1, Client Stakeholder 2, Dan (Component Library), \[Your Name], \[Other Internal Team Members]
+Source Control & CI/CD
 
-### **Executive Summary**
+Code hosted on GitHub with main branch as the deployment branch.
 
-The meeting focused on evaluating the feasibility of using the client-provided component library for frontend development. Dan from the component library team shared workarounds for missing components, such as customizing the date-time picker, table pagination, and multi-select dropdowns. While these solutions are workable, they may require design adjustments and additional development effort. The client stakeholders confirmed the decision to proceed with the library, with the understanding that extra effort and design flexibility may be needed.
+GitHub Actions configured for CI/CD pipeline (linting, unit tests, build, and deployment).
 
-### **Key Discussion Points**
+Workflow triggers on push/merge to main.
 
-1. Meeting attended by Client Stakeholder 1, Client Stakeholder 2, and Dan from the component library team.
-2. Dan explained possible workarounds to address gaps in the component library.
-3. **Date-Time Picker** – Can be created by combining the existing date picker with multiple select boxes (e.g., hours, minutes, seconds requiring separate dropdowns).
-4. **Table** – Available as a sub-component within another component; however, pagination will need to be custom developed.
-5. **Multi-Select Dropdown** – Can be achieved using the *ba-filter-checkbox* component, though additional tweaks are needed for value population.
-6. **On-Off Switch** – Recommendation to use a checkbox or radio button as an alternative.
-7. **Alerts/Toasts** – Suggested to use the *ba-message* component.
-8. **Icons** – A wider set of icons exists beyond what is documented. The team can also create new icons on demand with minimal delay.
-9. While these approaches are feasible, they may result in variations in the look and feel of the application. In other words, the design may need to be adjusted to better align with the capabilities of the component library.
-10. Client Stakeholder 1 confirmed the expectation that the client-provided library must be used, even with these limitations.
-11. It was also noted that implementing these workarounds is likely to incur some additional development effort.
-12. Dan mentioned that he can be contacted for any help regarding the usage of the library or for requests related to new component additions, if required.
 
-### **Decision/Outcome**
+Build Process
 
-* Agreed to proceed with the client-provided component library as the base for implementation.
-* Identified workarounds to fill gaps will be applied where required.
-* Acknowledged that additional effort may be needed to implement and maintain certain customizations.
+Application built using Vite (React + TypeScript).
 
-### **Next Steps / Action Items**
+SCSS modules compiled during build; tree-shaking and code-splitting enabled.
 
-1. Development team to evaluate and document the additional effort required for custom implementations.
-2. Work with the design team to ensure a consistent user experience despite adjustments.
-3. Monitor and record any impacts on delivery timelines for stakeholder visibility.
-4. Reach out to Dan when support is needed for using the library or exploring new component additions.
+Build artifacts generated in /dist folder.
+
+
+Deployment
+
+Build artifacts uploaded to AWS S3 bucket configured for static site hosting.
+
+CloudFront CDN (TODO/Revisit – if planned) can be used for caching and global distribution.
+
+Cache invalidation automated in deployment step (TODO/Revisit – confirm with DevOps).
+
+
+Environment Configuration
+
+Environment variables stored in GitHub secrets and injected during build.
+
+Separate buckets/CloudFront distributions for dev/staging/prod environments (TODO/Revisit).
+
+
+Monitoring & Rollback
+
+GitHub Actions pipeline logs used for deployment monitoring.
+
+Manual rollback by re-deploying from previous successful build artifacts stored in S3.
+
+
+
 
 ---
 
-Would you like me to also draft a **short closing note** you can use when sharing this MoM (something like: “Please review and let me know if I missed anything”)?
+Unit Testing (Jest + React Testing Library)
+
+Frameworks
+
+Jest used as the test runner and assertion library.
+
+React Testing Library (RTL) used for rendering components and simulating user interactions.
+
+
+Scope of Tests
+
+Unit tests for all reusable components (TextInput, Dropdown, Table, Modal, etc.).
+
+Business logic functions (helpers, hooks, Zustand store actions).
+
+API service layer functions (Axios wrappers) with mocks.
+
+Routing and conditional rendering (React Router flows).
+
+
+Test Organization
+
+Test files colocated with source files using .test.tsx / .test.ts naming convention.
+
+Snapshot testing for simple presentational components.
+
+Integration-style unit tests for form validations, API mocks, and user flows.
+
+
+Coverage & Standards
+
+Minimum 80% coverage required across statements, branches, and functions (TODO/Revisit exact threshold).
+
+Coverage reports generated as part of GitHub Actions pipeline.
+
+Pull requests blocked if tests fail.
+
+
+Mocking
+
+External services (Axios API calls, MSAL authentication) mocked using Jest mocks.
+
+Date/time logic tested with date-fns mock helpers or Jest fake timers.
+
+
+Execution
+
+Tests run locally via npm test or yarn test.
+
+Automated in CI/CD pipeline before build and deployment steps.
+
+
+
+
+---
+
+Authentication & Authorization
+
+Protocol & Provider
+
+Authentication handled via Microsoft Entra ID (formerly Azure AD).
+
+OIDC (OpenID Connect) protocol for user authentication and token exchange.
+
+Library: MSAL.js (Microsoft Authentication Library) for React/TypeScript.
+
+
+Flow
+
+Application registered in Entra ID as a SPA (Single Page Application).
+
+On accessing a protected route, unauthenticated users are redirected to Microsoft login page.
+
+Successful login returns ID token + Access token via redirect or popup.
+
+Tokens cached securely in sessionStorage (TODO: confirm storage mechanism).
+
+
+Authorization
+
+Admin and Normal User roles defined in Entra ID (TODO: confirm if roles are managed in Entra ID or backend).
+
+Role claims extracted from ID token and stored in global state (Zustand).
+
+Route-level access control applied using a custom PrivateRoute/SecuredLayout wrapper.
+
+
+Token Management
+
+Silent token acquisition attempted before redirect flow.
+
+Automatic token refresh handled by MSAL library.
+
+Logout clears MSAL session and redirects user to Entra ID logout endpoint.
+
+
+Cross-Cutting Concerns
+
+All API calls include Bearer Access Token in Authorization header.
+
+API gateway (backend) validates tokens against Entra ID.
+
+Global error handling for 401/403 responses → trigger re-authentication.
+
+Multi-environment configuration (dev, staging, prod) maintained in MSAL config object (clientId, authority, redirectUri).
+
+
+TODO / Revisit
+
+Decide between redirect vs popup login flow.
+
+Confirm if role-based access is purely front-end or enforced in backend APIs.
+
+Define exact claims (email, name, roles, etc.) required in ID token.
+
+Evaluate additional security needs: PKCE, conditional access policies.
+
+
+
+
+---
+
+✅ With these three sections in place, your LLD now covers:
+
+Build & Deployment
+
+Testing Strategy
+
+Authentication & Authorization
+
+
+Do you want me to also add a small authentication flow diagram (Login → Token → Protected Route → API Call) that you can drop alongside this section, similar to the main app flow diagram?
+
