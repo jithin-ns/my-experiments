@@ -1,27 +1,21 @@
-Got it! Here's the revised version with **Acceptance Criteria (AC)** and **Definition of Done (DoD)** clearly separated:
+Sure! Here's a minimal and clear breakdown for that JIRA ticket:
 
 ---
 
 ### **Acceptance Criteria (AC):**
 
-* Reusable form elements (input fields, radio buttons, checkboxes) are created.
-* A generic table component is implemented with customizable columns, rows, and sorting.
-* A modal component is built with dynamic content and close functionality.
-* A popover component is developed with customizable placement and content.
-* A chips component is created that handles dynamic content and actions.
-* Components must be customizable and reusable across the app.
-* Components are responsive and work on mobile, tablet, and desktop.
-* All components maintain consistent styling and design principles.
+* Use header and footer components from the client’s design library.
+* Header is displayed on all secured layout pages.
+* Footer is displayed on all secured layout pages.
+* Header and footer match the styling and behavior as defined in the design library.
+* Components are integrated without modifying their core structure.
 
 ---
 
 ### **Definition of Done (DoD):**
 
-* Components are implemented according to the design specifications.
-* All components are fully functional and tested for edge cases.
-* Accessibility standards are followed (keyboard navigation, screen reader support).
-* Unit tests are written and pass for each component.
-* Code is peer-reviewed and adheres to best practices.
-* Components are documented with usage instructions in the codebase.
-* No critical bugs are open for any component.
-* Feature is integrated and ready for deployment.
+* Header and footer are correctly imported and rendered.
+* Integration is tested across major screen sizes.
+* No UI inconsistencies or layout breaks.
+* Code is clean, reviewed, and follows project standards.
+* Feature is tested and ready for deployment.
