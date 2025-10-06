@@ -1,185 +1,27 @@
-Absolutely 👍 Let’s combine everything we just worked through — Build & Deployment, Unit Testing, and Authentication — into one structured section for your LLD. You can directly drop this into your document.
-
-
----
-
-Build & Deployment
-
-Source Control & CI/CD
-
-Code hosted on GitHub with main branch as the deployment branch.
-
-GitHub Actions configured for CI/CD pipeline (linting, unit tests, build, and deployment).
-
-Workflow triggers on push/merge to main.
-
-
-Build Process
-
-Application built using Vite (React + TypeScript).
-
-SCSS modules compiled during build; tree-shaking and code-splitting enabled.
-
-Build artifacts generated in /dist folder.
-
-
-Deployment
-
-Build artifacts uploaded to AWS S3 bucket configured for static site hosting.
-
-CloudFront CDN (TODO/Revisit – if planned) can be used for caching and global distribution.
-
-Cache invalidation automated in deployment step (TODO/Revisit – confirm with DevOps).
-
-
-Environment Configuration
-
-Environment variables stored in GitHub secrets and injected during build.
-
-Separate buckets/CloudFront distributions for dev/staging/prod environments (TODO/Revisit).
-
-
-Monitoring & Rollback
-
-GitHub Actions pipeline logs used for deployment monitoring.
-
-Manual rollback by re-deploying from previous successful build artifacts stored in S3.
-
-
-
+Got it! Here's the revised version with **Acceptance Criteria (AC)** and **Definition of Done (DoD)** clearly separated:
 
 ---
 
-Unit Testing (Jest + React Testing Library)
+### **Acceptance Criteria (AC):**
 
-Frameworks
-
-Jest used as the test runner and assertion library.
-
-React Testing Library (RTL) used for rendering components and simulating user interactions.
-
-
-Scope of Tests
-
-Unit tests for all reusable components (TextInput, Dropdown, Table, Modal, etc.).
-
-Business logic functions (helpers, hooks, Zustand store actions).
-
-API service layer functions (Axios wrappers) with mocks.
-
-Routing and conditional rendering (React Router flows).
-
-
-Test Organization
-
-Test files colocated with source files using .test.tsx / .test.ts naming convention.
-
-Snapshot testing for simple presentational components.
-
-Integration-style unit tests for form validations, API mocks, and user flows.
-
-
-Coverage & Standards
-
-Minimum 80% coverage required across statements, branches, and functions (TODO/Revisit exact threshold).
-
-Coverage reports generated as part of GitHub Actions pipeline.
-
-Pull requests blocked if tests fail.
-
-
-Mocking
-
-External services (Axios API calls, MSAL authentication) mocked using Jest mocks.
-
-Date/time logic tested with date-fns mock helpers or Jest fake timers.
-
-
-Execution
-
-Tests run locally via npm test or yarn test.
-
-Automated in CI/CD pipeline before build and deployment steps.
-
-
-
+* Reusable form elements (input fields, radio buttons, checkboxes) are created.
+* A generic table component is implemented with customizable columns, rows, and sorting.
+* A modal component is built with dynamic content and close functionality.
+* A popover component is developed with customizable placement and content.
+* A chips component is created that handles dynamic content and actions.
+* Components must be customizable and reusable across the app.
+* Components are responsive and work on mobile, tablet, and desktop.
+* All components maintain consistent styling and design principles.
 
 ---
 
-Authentication & Authorization
+### **Definition of Done (DoD):**
 
-Protocol & Provider
-
-Authentication handled via Microsoft Entra ID (formerly Azure AD).
-
-OIDC (OpenID Connect) protocol for user authentication and token exchange.
-
-Library: MSAL.js (Microsoft Authentication Library) for React/TypeScript.
-
-
-Flow
-
-Application registered in Entra ID as a SPA (Single Page Application).
-
-On accessing a protected route, unauthenticated users are redirected to Microsoft login page.
-
-Successful login returns ID token + Access token via redirect or popup.
-
-Tokens cached securely in sessionStorage (TODO: confirm storage mechanism).
-
-
-Authorization
-
-Admin and Normal User roles defined in Entra ID (TODO: confirm if roles are managed in Entra ID or backend).
-
-Role claims extracted from ID token and stored in global state (Zustand).
-
-Route-level access control applied using a custom PrivateRoute/SecuredLayout wrapper.
-
-
-Token Management
-
-Silent token acquisition attempted before redirect flow.
-
-Automatic token refresh handled by MSAL library.
-
-Logout clears MSAL session and redirects user to Entra ID logout endpoint.
-
-
-Cross-Cutting Concerns
-
-All API calls include Bearer Access Token in Authorization header.
-
-API gateway (backend) validates tokens against Entra ID.
-
-Global error handling for 401/403 responses → trigger re-authentication.
-
-Multi-environment configuration (dev, staging, prod) maintained in MSAL config object (clientId, authority, redirectUri).
-
-
-TODO / Revisit
-
-Decide between redirect vs popup login flow.
-
-Confirm if role-based access is purely front-end or enforced in backend APIs.
-
-Define exact claims (email, name, roles, etc.) required in ID token.
-
-Evaluate additional security needs: PKCE, conditional access policies.
-
-
-
-
----
-
-✅ With these three sections in place, your LLD now covers:
-
-Build & Deployment
-
-Testing Strategy
-
-Authentication & Authorization
-
-
-Do you want me to also add a small authentication flow diagram (Login → Token → Protected Route → API Call) that you can drop alongside this section, similar to the main app flow diagram?
-
+* Components are implemented according to the design specifications.
+* All components are fully functional and tested for edge cases.
+* Accessibility standards are followed (keyboard navigation, screen reader support).
+* Unit tests are written and pass for each component.
+* Code is peer-reviewed and adheres to best practices.
+* Components are documented with usage instructions in the codebase.
+* No critical bugs are open for any component.
+* Feature is integrated and ready for deployment.
