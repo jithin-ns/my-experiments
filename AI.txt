@@ -1,21 +1,347 @@
-Sure! Here's a minimal and clear breakdown for that JIRA ticket:
+In my react 19 + TypeScript application, I have a nested tab structure in my application. A set of main tabs and under each main tab, we have a set of sub tabs. Upon each tab click, I want to navigate to a different route. For example:
+
+1. Main tabs - Tab 1 (/tab1) and Tab 2 (/tab2)
+2. Sub Tabs under Tab 1 - Tab X (/tab-x), Tab Y (/tab-y), Tab Z (/tab-z)
+3. Sub Tabs under Tab 2 - Tab A (/tab-a), Tab B (/tab-b), Tab C (/tab-c)
+4. If I have selected Tab Y (means Main Tab 1, sub tab Y), the path will be "/tab1/tab-y"
+5. If I have selected Tab C (means Main Tab 2, sub tab C), the path will be "/tab2/tab-c"
+6. If only main tab is selected, first sub tab under the selected main tab will be selected
+
+I want to create a layout named TabLayout, which will provide the tab structure and use it as below:
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <TabLayout tabs={mainTabs} />,
+    children: [
+      {
+        path: "/",
+        element: <TabLayout tabs={subTabs} />,
+        children: [
+          // actual routes
+        ],
+      },
+    ],
+  },
+]);
+
+How can I implement that?
+
+
+
+
+
+
+
+
+
+
+
+Here’s one way you can structure and implement **nested tabs + routing** in a React + TypeScript app (React Router v7, or v6-style router) so that:
+
+* You have “main tabs” and “sub‑tabs”
+* Clicking a tab changes the route
+* When only a main tab is selected (no explicit subtab), you redirect automatically to the first subtab
+* The layout component (TabLayout) handles rendering the tabs + an `<Outlet />` for nested content
+
+I'll walk you through:
+
+1. Defining your tab data and routes
+2. The `TabLayout` component
+3. Route configuration
+4. A “redirect to first subtab” fallback
+5. TypeScript types, and
+6. Handling “active tab” highlighting
 
 ---
 
-### **Acceptance Criteria (AC):**
+## 1. Tab data / configuration
 
-* Use header and footer components from the client’s design library.
-* Header is displayed on all secured layout pages.
-* Footer is displayed on all secured layout pages.
-* Header and footer match the styling and behavior as defined in the design library.
-* Components are integrated without modifying their core structure.
+You can represent your main tabs and subtabs in a structured way. For instance:
+
+```ts
+// types.ts
+export interface SubTab {
+  label: string;
+  path: string;   // relative path for that subtab
+}
+
+export interface MainTab {
+  label: string;
+  path: string;   // e.g. "/tab1"
+  subTabs: SubTab[];
+}
+```
+
+Then, for example:
+
+```ts
+// tabs.ts
+import type { MainTab } from "./types";
+
+export const mainTabs: MainTab[] = [
+  {
+    label: "Tab1",
+    path: "tab1",
+    subTabs: [
+      { label: "Tab X", path: "tab-x" },
+      { label: "Tab Y", path: "tab-y" },
+      { label: "Tab Z", path: "tab-z" },
+    ],
+  },
+  {
+    label: "Tab2",
+    path: "tab2",
+    subTabs: [
+      { label: "Tab A", path: "tab-a" },
+      { label: "Tab B", path: "tab-b" },
+      { label: "Tab C", path: "tab-c" },
+    ],
+  },
+];
+```
+
+Note: Here the `path` for main tabs and subtabs are *relative* segments (not starting with `/`). You’ll nest them in the router.
 
 ---
 
-### **Definition of Done (DoD):**
+## 2. `TabLayout` component
 
-* Header and footer are correctly imported and rendered.
-* Integration is tested across major screen sizes.
-* No UI inconsistencies or layout breaks.
-* Code is clean, reviewed, and follows project standards.
-* Feature is tested and ready for deployment.
+You’ll have a layout component that:
+
+* Renders the main tabs (e.g. as navigation buttons or links)
+* Renders a second-level tab bar for the active main tab’s subtabs
+* Uses `<Outlet />` to render the child routes
+
+Here’s a sketch:
+
+```tsx
+import { Outlet, useNavigate, useLocation, Link, useParams } from "react-router";
+import type { MainTab, SubTab } from "./types";
+import { mainTabs } from "./tabs";
+
+interface TabLayoutProps {
+  tabs: MainTab[];  // top-level tabs
+}
+
+export function TabLayout({ tabs }: TabLayoutProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = useParams();  
+  // Note: depending on how your router is configured, `params` might include
+  // the main tab segment (e.g. `mainTab`) or the subTab. Adjust accordingly.
+
+  // Determine the currently selected main tab by matching the path
+  // For example, take the first segment of the path and match:
+  const pathSegments = location.pathname.split("/").filter(Boolean); // e.g. ["tab1", "tab-y"]
+  const currentMain = pathSegments[0];  // e.g. "tab1"
+  const currentSub = pathSegments[1];   // e.g. "tab-y", might be undefined
+
+  // Find the MainTab object for the current main tab:
+  const activeMainTab = tabs.find((t) => t.path === currentMain) || tabs[0];
+
+  // If no sub path is present, redirect to the first subtab
+  // (We’ll do this via a child “index” route, so may not need to do it manually here.)
+
+  return (
+    <div>
+      <nav className="main-tabs">
+        {tabs.map((t) => {
+          const isActive = t.path === currentMain;
+          return (
+            <Link
+              key={t.path}
+              to={`/${t.path}`}   // top-level link 
+              className={isActive ? "active-main-tab" : ""}
+            >
+              {t.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <nav className="sub-tabs">
+        {activeMainTab.subTabs.map((st) => {
+          const to = `/${activeMainTab.path}/${st.path}`;
+          const isActive = st.path === currentSub;
+          return (
+            <Link
+              key={st.path}
+              to={to}
+              className={isActive ? "active-sub-tab" : ""}
+            >
+              {st.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="tab-content">
+        <Outlet />
+      </div>
+    </div>
+  );
+}
+```
+
+A few notes:
+
+* The `main-tabs` nav lists each main tab; clicking it goes to `/<mainTab.path>`.
+* The `sub-tabs` nav is based on `activeMainTab.subTabs`.
+* The `Outlet` is where children (routes for subtabs) will render.
+* We derive `currentMain` and `currentSub` from the URL segments. You might prefer using `useMatch` or `matchPath` to determine active tabs more robustly.
+
+---
+
+## 3. Route configuration
+
+You’ll nest routes to represent this hierarchy. Using `createBrowserRouter` or `<Routes>` style, something like:
+
+```tsx
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from "react-router";
+import { TabLayout } from "./TabLayout";
+import { mainTabs } from "./tabs";
+
+// Dummy subtab pages
+function TabX() { return <div>Tab X Content</div>; }
+function TabY() { return <div>Tab Y Content</div>; }
+function TabZ() { return <div>Tab Z Content</div>; }
+function TabA() { return <div>Tab A Content</div>; }
+function TabB() { return <div>Tab B Content</div>; }
+function TabC() { return <div>Tab C Content</div>; }
+
+// Build child routes dynamically
+const routes = mainTabs.map((main) => {
+  const children = main.subTabs.map((st) => ({
+    path: st.path,
+    element:
+      // you’ll map path to component — you can build a lookup or switch
+      st.path === "tab-x" ? <TabX /> :
+      st.path === "tab-y" ? <TabY /> :
+      st.path === "tab-z" ? <TabZ /> :
+      st.path === "tab-a" ? <TabA /> :
+      st.path === "tab-b" ? <TabB /> :
+      st.path === "tab-c" ? <TabC /> :
+      <div>Unknown {st.path}</div>,
+  }));
+
+  return {
+    path: main.path,
+    element: <Outlet />,     // this layer wraps subtabs
+    children: [
+      // Index route — when you go to `/tab1` with no subpath, redirect to first subtab
+      {
+        index: true,
+        element: <Navigate to={main.subTabs[0].path} replace />,
+      },
+      ...children,
+    ],
+  };
+});
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <TabLayout tabs={mainTabs} />,
+    children: [
+      {
+        path: "",  // root path
+        element: <Navigate to={mainTabs[0].path} replace />,
+      },
+      ...routes,
+    ],
+  },
+]);
+
+// In your app:
+function App() {
+  return <RouterProvider router={router} />;
+}
+```
+
+Explanation:
+
+* The root route `"/"` uses `TabLayout` as the layout for everything.
+* Under that, we redirect from `"/"` (no main tab) to the first main tab.
+* Each `mainTab` has a nested route definition:
+   - A default **index** route that redirects to the first subtab (so `/tab1` becomes `/tab1/tab-x`).
+   - Child routes for each subtab with `path: st.path`.
+* Because `TabLayout` is the root layout, it always renders the main + sub tab bars, and the child `Outlet` shows the matching subtab content.
+
+---
+
+## 4. Redirect to first subtab (index route)
+
+In the route config above:
+
+```ts
+{
+  index: true,
+  element: <Navigate to={main.subTabs[0].path} replace />,
+}
+```
+
+This means that if you land on `/tab1` (i.e. no further path), React Router will redirect you to `/tab1/tab-x` (the first subtab). This satisfies your requirement “If only main tab is selected, first sub tab under that main tab will be selected.”
+
+---
+
+## 5. TypeScript types / safety enhancements
+
+You might want to type your route-generation so that the components map properly. For example, you could make a record mapping from subtab path strings to components:
+
+```ts
+const subTabComponentMap: Record<string, React.ReactNode> = {
+  "tab-x": <TabX />,
+  "tab-y": <TabY />,
+  "tab-z": <TabZ />,
+  "tab-a": <TabA />,
+  "tab-b": <TabB />,
+  "tab-c": <TabC />,
+};
+```
+
+Then in your route → `element: subTabComponentMap[st.path] || <NotFound />`.
+
+You can type your `tabs` structure so that paths must be keys in that map, etc. (some string literal types).
+
+Also, in `TabLayout`, instead of naive `location.pathname.split("/")`, you might be more robust with `useMatch` or `matchPath`.
+
+For example:
+
+```ts
+import { matchPath } from "react-router";
+
+function isActiveMain(mainPath: string, currentPath: string) {
+  // matches /{mainPath}/... or exactly /{mainPath}
+  return matchPath({ path: `/${mainPath}/*`, end: false }, currentPath) != null;
+}
+
+function isActiveSub(mainPath: string, subPath: string, currentPath: string) {
+  return matchPath(
+    { path: `/${mainPath}/${subPath}`, end: true },
+    currentPath
+  ) != null;
+}
+```
+
+Then in your rendering logic:
+
+```tsx
+const isActiveMain = isActiveMain(t.path, location.pathname);
+const isActiveSub = isActiveSub(activeMainTab.path, st.path, location.pathname);
+```
+
+This handles deeper routes or quirks more robustly.
+
+---
+
+## 6. Summary and caveats
+
+* Use a layout route (with `TabLayout`) at a high level, so your tabs UI is always present.
+* Nest a route for each main tab, and under that nest routes for each subtab.
+* Use an **index route redirect** to the first subtab so that `/tab1` → `/tab1/tab-x`.
+* Use `Outlet` in the layout to render nested content.
+* Use `matchPath` or `useLocation` + string checks to apply “active” class names to tabs.
+* Be careful about leading/trailing slashes and relative vs absolute paths when constructing `to=...`.
+
+This design gives you a clean, scalable tab + routing structure. If you like, I can put together a fully runnable CodeSandbox example with React Router v7 + TypeScript that you can drop into your app. Do you want me to prepare that for you?
