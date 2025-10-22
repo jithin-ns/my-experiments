@@ -1,15 +1,21 @@
-function useCurrentRoutePermissions() {
-  const location = useLocation();
+function getVisiblePages(page: number, totalPages: number) {
+  const pages: (number | string)[] = [];
+  // Always show first page
+  pages.push(1);
 
-  for (const key in paths) {
-    const { url, permissions } = paths[key as keyof typeof paths];
+  // If gap between first and start of window, add ellipsis
+  if (page - 2 > 2) pages.push("...");
 
-    // matchPath(pattern, pathname)
-    if (matchPath({ path: url, end: true }, location.pathname)) {
-      return permissions;
-    }
+  // Pages around current (max 2 either side)
+  for (let i = Math.max(2, page - 2); i <= Math.min(totalPages - 1, page + 2); i++) {
+    pages.push(i);
   }
 
-  // No match found → no permissions
-  return [];
+  // If gap between end of window and last, add ellipsis
+  if (page + 2 < totalPages - 1) pages.push("...");
+
+  // Always show last page (if more than one)
+  if (totalPages > 1) pages.push(totalPages);
+
+  return pages;
 }
