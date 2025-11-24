@@ -1,19 +1,165 @@
-function deepEqual(a: any, b: any): boolean {
-  if (a === b) return true;
+// deepEqual.ts
+export type Plain = string | number | boolean | null | undefined;
 
-  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null)
-    return false;
+/** true for plain objects and arrays (not null) */
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  v !== null && typeof v === "object";
 
+/** handle primitive equality quickly */
+const isPrimitiveEqual = (a: unknown, b: unknown): boolean => a === b;
+
+/** compare arrays element-wise */
+const arraysEqual = (a: unknown[], b: unknown[], eq: (x: unknown, y: unknown) => boolean): boolean => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (!eq(a[i], b[i])) return false;
+  }
+  return true;
+};
+
+/** compare plain objects (own enumerable keys) */
+const objectsEqual = (a: Record<string, unknown>, b: Record<string, unknown>, eq: (x: unknown, y: unknown) => boolean): boolean => {
   const keysA = Object.keys(a);
   const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
 
   for (const key of keysA) {
-    if (!keysB.includes(key)) return false;
-    if (!deepEqual(a[key], b[key])) return false;
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    if (!eq(a[key], b[key])) return false;
+  }
+  return true;
+};
+
+/**
+ * Deep equality for plain JS values: primitives, arrays, plain objects.
+ * Does not compare functions or special objects (Date/RegExp) — can be extended if needed.
+ */
+export const deepEqual = (a: unknown, b: unknown): boolean => {
+  if (isPrimitiveEqual(a, b)) return true;
+
+  // If one is primitive (or null) and the other is an object -> not equal
+  if (!isObject(a) || !isObject(b)) return false;
+
+  // Both are objects (maybe arrays)
+  const aArr = Array.isArray(a);
+  const bArr = Array.isArray(b);
+  if (aArr || bArr) {
+    if (!aArr || !bArr) return false; // one array other not
+    return arraysEqual(a as unknown[], b as unknown[], deepEqual);
   }
 
-  return true;
-}
+  // both plain objects
+  return objectsEqual(a as Record<string, unknown>, b as Record<string, unknown>, deepEqual);
+};
 
-const same = deepEqual(obj1, obj2);
+
+
+
+
+
+
+
+
+
+
+
+// deepEqual.test.ts
+import { deepEqual } from "./deepEqual";
+
+describe("deepEqual", () => {
+  test("primitives: numbers, strings, booleans", () => {
+    expect(deepEqual(1, 1)).toBe(true);
+    expect(deepEqual(1, 2)).toBe(false);
+    expect(deepEqual("a", "a")).toBe(true);
+    expect(deepEqual("a", "b")).toBe(false);
+    expect(deepEqual(true, true)).toBe(true);
+    expect(deepEqual(true, false)).toBe(false);
+  });
+
+  test("null and undefined handling", () => {
+    expect(deepEqual(null, null)).toBe(true);
+    expect(deepEqual(undefined, undefined)).toBe(true);
+    expect(deepEqual(null, undefined)).toBe(false);
+    expect(deepEqual(undefined, null)).toBe(false);
+  });
+
+  test("same object reference returns true", () => {
+    const obj = { a: 1 };
+    expect(deepEqual(obj, obj)).toBe(true);
+  });
+
+  test("simple objects with same keys/values (different key order)", () => {
+    const a = { x: 1, y: 2 };
+    const b = { y: 2, x: 1 };
+    expect(deepEqual(a, b)).toBe(true);
+  });
+
+  test("objects that differ by a key or value are not equal", () => {
+    const a = { x: 1, y: 2 };
+    const missingKey = { x: 1 };
+    const differentValue = { x: 1, y: 3 };
+
+    expect(deepEqual(a, missingKey)).toBe(false);
+    expect(deepEqual(a, differentValue)).toBe(false);
+  });
+
+  test("arrays: same order and values", () => {
+    expect(deepEqual([1, 2, 3], [1, 2, 3])).toBe(true);
+  });
+
+  test("arrays: different order is not equal", () => {
+    expect(deepEqual([1, 2, 3], [3, 2, 1])).toBe(false);
+  });
+
+  test("nested arrays and objects", () => {
+    const a = {
+      users: [
+        { id: 1, name: "A", roles: ["admin", "user"] },
+        { id: 2, name: "B", roles: [] },
+      ],
+      meta: { total: 2 },
+    };
+
+    const b = {
+      meta: { total: 2 },
+      users: [
+        { id: 1, name: "A", roles: ["admin", "user"] },
+        { id: 2, name: "B", roles: [] },
+      ],
+    };
+
+    expect(deepEqual(a, b)).toBe(true);
+  });
+
+  test("array vs object should be false", () => {
+    expect(deepEqual([1, 2], { 0: 1, 1: 2 })).toBe(false);
+  });
+
+  test("functions: only same reference considered equal", () => {
+    const fn1 = () => 1;
+    const fn2 = () => 1;
+    expect(deepEqual(fn1, fn1)).toBe(true);
+    expect(deepEqual(fn1, fn2)).toBe(false);
+  });
+
+  test("different primitive types with same 'value' are not equal (e.g., '1' vs 1)", () => {
+    expect(deepEqual("1", 1)).toBe(false);
+  });
+
+  test("empty objects and empty arrays treated correctly", () => {
+    expect(deepEqual({}, {})).toBe(true);
+    expect(deepEqual([], [])).toBe(true);
+    expect(deepEqual({}, [])).toBe(false);
+  });
+
+  // Optional: illustrate Date behavior of the implementation (if you want to assert current behavior)
+  test("Date objects: current implementation treats objects by enumerable keys", () => {
+    // Note: Date objects have no own enumerable properties by default,
+    // so two different Date instances will be considered equal by this implementation.
+    const d1 = new Date("2020-01-01");
+    const d2 = new Date("2021-01-01");
+    // This asserts current behavior (may be surprising). If you plan to special-case Date,
+    // update implementation and this test accordingly.
+    expect(deepEqual(d1, d2)).toBe(true);
+  });
+});
