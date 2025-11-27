@@ -1,1 +1,103 @@
-const re = /^[A-Za-z._-]+@[A-Za-z._-]+\.[A-Za-z._-]+$/;
+Here are clean, production-ready versions of the callMsGraph utility — both TypeScript and JavaScript versions — exactly as recommended for MSAL + React apps.
+
+
+---
+
+✅ TypeScript version (callMsGraph.ts)
+
+export async function callMsGraph(
+  endpoint: string,
+  accessToken: string
+): Promise<any> {
+  const headers = new Headers();
+  headers.append("Authorization", `Bearer ${accessToken}`);
+  headers.append("Content-Type", "application/json");
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: headers,
+  };
+
+  const response = await fetch(endpoint, options);
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Graph API error: ${response.status} - ${error}`);
+  }
+
+  return response.json();
+}
+
+
+---
+
+✅ JavaScript version (callMsGraph.js)
+
+export async function callMsGraph(endpoint, accessToken) {
+  const headers = new Headers();
+  headers.append("Authorization", `Bearer ${accessToken}`);
+  headers.append("Content-Type", "application/json");
+
+  const options = {
+    method: "GET",
+    headers: headers,
+  };
+
+  const response = await fetch(endpoint, options);
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Graph API error: ${response.status} - ${error}`);
+  }
+
+  return response.json();
+}
+
+
+---
+
+📌 Usage example (React + MSAL)
+
+Assuming you already acquired the token:
+
+import { callMsGraph } from "./callMsGraph";
+
+const graphEndpoint = "https://graph.microsoft.com/v1.0/me";
+
+async function loadProfile() {
+  const response = await instance.acquireTokenSilent(request);
+
+  const data = await callMsGraph(graphEndpoint, response.accessToken);
+
+  console.log(data); // full user profile JSON
+}
+
+
+---
+
+📌 Sample /me response you get from Graph
+
+{
+  "displayName": "John Doe",
+  "givenName": "John",
+  "surname": "Doe",
+  "mail": "john.doe@contoso.com",
+  "userPrincipalName": "john.doe@contoso.com",
+  "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+}
+
+
+---
+
+🚀 If you want...
+
+I can also generate higher-level wrappers, like:
+
+getUserProfile()
+
+getUserPhoto()
+
+getUserGroups()
+
+
+Just tell me what profile fields your app needs.
