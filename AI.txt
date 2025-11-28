@@ -1,103 +1,160 @@
-Here are clean, production-ready versions of the callMsGraph utility — both TypeScript and JavaScript versions — exactly as recommended for MSAL + React apps.
+Nice — here are the practical, copy-pasteable ways to sign the user out of Azure AD when using @azure/msal-react / @azure/msal-browser, plus the portal steps and extra notes you’ll want.
 
 
 ---
 
-✅ TypeScript version (callMsGraph.ts)
+1) Quick summary
 
-export async function callMsGraph(
-  endpoint: string,
-  accessToken: string
-): Promise<any> {
-  const headers = new Headers();
-  headers.append("Authorization", `Bearer ${accessToken}`);
-  headers.append("Content-Type", "application/json");
+Use instance.logoutRedirect() or instance.logoutPopup() from useMsal() (recommended for SPA).
 
-  const options: RequestInit = {
-    method: "GET",
-    headers: headers,
+Configure a post-logout redirect URI in your Azure App Registration so Azure can send users back after sign-out.
+
+Optionally pass account and postLogoutRedirectUri in the logout request.
+
+Logout clears the MSAL in-browser cache for that account and directs the user to the Azure logout endpoint (which terminates the session at Azure).
+
+
+
+---
+
+2) Azure portal: add post-logout redirect URL
+
+Go to: Azure Portal → Microsoft Entra ID → App registrations → Your app → Authentication
+
+Under Single-page application (SPA), ensure your app's redirect URI is present (e.g. http://localhost:3000).
+
+Add a post-logout / front-channel logout URL if your app needs to be redirected after logout. Often using the same origin works:
+
+
+http://localhost:3000
+
+(Exact naming in the portal UI can vary — look for Front-channel logout URL / Logout URL / add a "post logout" redirect.)
+
+
+---
+
+3) Code examples (TypeScript, React)
+
+A. Simple logout using redirect (recommended for reliability)
+
+// LogoutButton.tsx
+import React from "react";
+import { useMsal } from "@azure/msal-react";
+
+export const LogoutButton: React.FC = () => {
+  const { instance, accounts } = useMsal();
+  const account = accounts[0];
+
+  const handleLogout = async () => {
+    try {
+      await instance.logoutRedirect({
+        account,                                  // optional but recommended
+        postLogoutRedirectUri: window.location.origin
+      });
+    } catch (err) {
+      console.error("logoutRedirect error:", err);
+    }
   };
 
-  const response = await fetch(endpoint, options);
+  return <button onClick={handleLogout}>Sign out</button>;
+};
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Graph API error: ${response.status} - ${error}`);
-  }
+B. Popup logout (keeps user on the page; blocked by popup blockers occasionally)
 
-  return response.json();
-}
+export const LogoutPopupButton: React.FC = () => {
+  const { instance, accounts } = useMsal();
+  const account = accounts[0];
 
-
----
-
-✅ JavaScript version (callMsGraph.js)
-
-export async function callMsGraph(endpoint, accessToken) {
-  const headers = new Headers();
-  headers.append("Authorization", `Bearer ${accessToken}`);
-  headers.append("Content-Type", "application/json");
-
-  const options = {
-    method: "GET",
-    headers: headers,
+  const handleLogout = async () => {
+    try {
+      await instance.logoutPopup({
+        account,
+        postLogoutRedirectUri: window.location.origin
+      });
+      // After popup resolves, you may want to clear app state or redirect
+    } catch (err) {
+      console.error("logoutPopup error:", err);
+    }
   };
 
-  const response = await fetch(endpoint, options);
+  return <button onClick={handleLogout}>Sign out (popup)</button>;
+};
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Graph API error: ${response.status} - ${error}`);
+> account is optional, but passing it ensures MSAL clears the correct account from its cache when multiple accounts are present.
+
+
+
+
+---
+
+4) What these methods do
+
+They call Azure AD’s logout endpoint (e.g. https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout) which removes the Azure session cookie (signs user out of SSO).
+
+MSAL also clears tokens from the browser cache for the specified account.
+
+The user is then redirected to the postLogoutRedirectUri you specify (and must be registered in the app registration).
+
+
+
+---
+
+5) If you need to call the logout endpoint manually
+
+You can also redirect the browser manually:
+
+const tenant = "<tenant-id-or-common-or-your-tenant-domain>";
+const postLogout = encodeURIComponent(window.location.origin);
+window.location.href = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout?post_logout_redirect_uri=${postLogout}`;
+
+This is useful when you want tight control; MSAL’s helper methods do this for you and clear the cache, so usually prefer instance.logoutRedirect().
+
+
+---
+
+6) Server-side / refresh-token concerns
+
+SPAs normally don’t store long-lived refresh tokens client-side; sign-out at Azure ends the server/session SSO cookie.
+
+If you have a backend that issued refresh tokens (confidential client flow), to fully revoke refresh tokens you must use Microsoft Graph (invalidateRefreshTokens) or revoke sessions for the user — that’s a separate server-side action.
+
+For most SPA use-cases, MSAL logout + Azure session termination is sufficient.
+
+
+
+---
+
+7) App state & UI
+
+After logout completes, clear any in-app state you hold (Redux/context local state, cookies, localStorage other than MSAL-managed items if you used them). MSAL clears its token cache but not your own app state.
+
+Example (after logoutRedirect finishes and user returns to your app):
+
+// Onapp mount: check if no account -> reset app state
+useEffect(() => {
+  const account = instance.getActiveAccount();
+  if (!account) {
+    dispatch({ type: "RESET_APP_STATE" });
   }
-
-  return response.json();
-}
+}, [instance]);
 
 
 ---
 
-📌 Usage example (React + MSAL)
+8) Troubleshooting
 
-Assuming you already acquired the token:
+No post-logout redirect / invalid redirect → ensure the postLogoutRedirectUri is registered in Azure exactly (no trailing slash mismatches).
 
-import { callMsGraph } from "./callMsGraph";
+Popup blocked → use redirect flow.
 
-const graphEndpoint = "https://graph.microsoft.com/v1.0/me";
+User still appears logged in via SSO → they may still have a session at another app or browser that re-signs them in; to remove all SSO sessions you’ll need to fully sign out from all apps or instruct them to clear browser cookies (or use tenant policies to sign out everywhere).
 
-async function loadProfile() {
-  const response = await instance.acquireTokenSilent(request);
-
-  const data = await callMsGraph(graphEndpoint, response.accessToken);
-
-  console.log(data); // full user profile JSON
-}
 
 
 ---
 
-📌 Sample /me response you get from Graph
+If you want, I can:
 
-{
-  "displayName": "John Doe",
-  "givenName": "John",
-  "surname": "Doe",
-  "mail": "john.doe@contoso.com",
-  "userPrincipalName": "john.doe@contoso.com",
-  "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-}
+Provide a tiny runnable React/TypeScript example demonstrating login → call Graph → logout flow, or
 
-
----
-
-🚀 If you want...
-
-I can also generate higher-level wrappers, like:
-
-getUserProfile()
-
-getUserPhoto()
-
-getUserGroups()
-
-
-Just tell me what profile fields your app needs.
+Show how to revoke refresh tokens for a server-based app (if you have a confidential client backend). Which would help you more?
