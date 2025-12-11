@@ -1,22 +1,154 @@
-Slide 3 — Solution: Leveraging Innovation for Seamless CX (Humanized Presentation Script)
-So, when we think about improving customer experience in the digital world, the real game-changer is how we use technology.
-AI and automation are no longer just buzzwords—they’re actually helping us solve problems faster. Think about chatbots that answer instantly or systems that predict what a customer might need before they even ask. That’s where we’re heading.
-Another important piece is building a true omnichannel experience. Customers move between apps, websites, social platforms, and physical stores without even thinking about it. They expect brands to keep up—and when everything feels connected, it builds trust.
-Personalization is also becoming non-negotiable. Customers want to feel like the experience is made for them, and with the right data insights, we can tailor interactions at every step.
-And then, of course, we have new technologies—AR, VR, 5G, blockchain. These aren’t just “nice to have” anymore. They’ll help create more immersive, transparent, and faster experiences that really stand out.
+Got it — you want GitHub Secrets to end up as Vite environment variables so that you can use:
+
+import.meta.env.VITE_API_URL
+
+inside your React app, just like local .env values.
+
+✅ Yes, this is absolutely possible.
+You just need to inject the GitHub secrets into Vite at build time using environment variables that start with VITE_.
+
+Below is the exact working pattern.
 
 
 ---
 
-Slide 4 — Key Differentiators (Humanized Presentation Script)
-What really sets future-ready CX apart is how quickly we can understand and respond to customer needs. With real-time data and predictive insights, we can actually step in before something becomes a problem and offer help proactively.
-Another big differentiator is AI-driven personalization. Experiences will adjust themselves depending on who the customer is—what they like, how they behave, what they’ve done before. It feels less like a system and more like a brand that actually “gets” them.
-And finally, the blending of digital and physical experiences is becoming seamless. Whether someone starts browsing online and finishes in-store, or the other way around, the journey should feel smooth and consistent. This kind of frictionless movement makes the entire experience feel much more natural.
+✅ How Vite exposes environment variables
+
+Vite will expose only variables that start with VITE_.
+
+So in your workflow, you must set:
+
+VITE_API_URL = <secret value>
+VITE_CLIENT_ID = <secret value>
 
 
 ---
 
-Slide 5 — Conclusion & Future Directions (Humanized Presentation Script)
-To wrap up, the future of customer experience is all about using AI, automation, and personalization in smarter ways. These tools will shape how well businesses meet rising expectations.
-Companies that invest in strong omnichannel strategies and adopt emerging technologies early will be the ones that really stand out. At the end of the day, the goal is simple: create experiences that are seamless, personalized, and trustworthy.
-Looking forward, with technologies like 5G, AR, and advanced AI continuing to evolve, the possibilities are only going to grow. But even as everything becomes digital, what truly matters is how we make customers feel. Emotional connection and a customer-first approach will remain at the heart of great CX—no matter how advanced the technology gets.
+✅ How to push GitHub Secrets into Vite env variables
+
+Use $GITHUB_ENV to create environment variables that Vite can read during npm run build.
+
+✔ GitHub Actions workflow (canonical solution)
+
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      # IMPORTANT: Export Secrets as VITE_ env vars
+      - name: Inject Vite env variables
+        run: |
+          echo "VITE_API_URL=${{ secrets.API_URL }}" >> $GITHUB_ENV
+          echo "VITE_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
+
+      - name: Build app
+        run: npm run build
+
+👉 Result:
+
+During the npm run build, Vite now sees:
+
+process.env.VITE_API_URL
+process.env.VITE_CLIENT_ID
+
+and exposes them globally as:
+
+import.meta.env.VITE_API_URL
+import.meta.env.VITE_CLIENT_ID
+
+
+---
+
+✅ After build, inside React:
+
+const apiUrl = import.meta.env.VITE_API_URL;
+console.log(apiUrl);
+
+Your CI-built version now has those values baked into the bundle.
+
+
+---
+
+⚠️ Important Notes (so you don’t run into issues)
+
+1️⃣ The values become public in the final JS bundle
+
+Anything you expose via import.meta.env ends up visible in browser DevTools.
+So only use:
+
+Public API URLs
+
+Public client IDs
+
+Feature flags
+
+
+Do NOT include:
+
+Private API keys
+
+Secrets
+
+Tokens
+
+
+2️⃣ These values will not exist during local dev unless you run a local .env
+
+Create a .env.local:
+
+VITE_API_URL=http://localhost:5000
+VITE_CLIENT_ID=dev-123
+
+
+---
+
+🟢 Summary — What you need to do
+
+✔ Add GitHub secrets:
+
+API_URL
+
+CLIENT_ID
+
+
+✔ Inject them as VITE_ variables:
+
+echo "VITE_API_URL=${{ secrets.API_URL }}" >> $GITHUB_ENV
+
+✔ Build your Vite app
+
+npm run build
+
+✔ Use in app:
+
+import.meta.env.VITE_API_URL
+
+
+---
+
+If you want, I can provide:
+
+A complete workflow file for build + deploy
+
+A safe classification of what values can be baked into frontend vs runtime
+
+Automatic validation of missing env values during build
+
+
+Just tell me!
