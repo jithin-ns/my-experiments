@@ -1,154 +1,30 @@
-Got it — you want GitHub Secrets to end up as Vite environment variables so that you can use:
-
-import.meta.env.VITE_API_URL
-
-inside your React app, just like local .env values.
-
-✅ Yes, this is absolutely possible.
-You just need to inject the GitHub secrets into Vite at build time using environment variables that start with VITE_.
-
-Below is the exact working pattern.
+Here’s a concise, JIRA-friendly RCA you can directly use or slightly tailor:
 
 
 ---
 
-✅ How Vite exposes environment variables
+Root Cause Analysis (RCA)
 
-Vite will expose only variables that start with VITE_.
-
-So in your workflow, you must set:
-
-VITE_API_URL = <secret value>
-VITE_CLIENT_ID = <secret value>
+The issue occurred due to a missing client-side validation for the input field. During development, the validation requirement was either not explicitly documented or overlooked, resulting in the field accepting invalid values. Since no UI-level validation was implemented, incorrect input was allowed to be submitted, leading to the reported bug.
 
 
 ---
 
-✅ How to push GitHub Secrets into Vite env variables
+Corrective Action
 
-Use $GITHUB_ENV to create environment variables that Vite can read during npm run build.
+Added appropriate UI validation to restrict invalid input.
 
-✔ GitHub Actions workflow (canonical solution)
+Ensured validation messages are shown to users before submission.
 
-name: Build
 
-on:
-  push:
-    branches: [ main ]
+Preventive Action
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+Updated validation checklist for UI components.
 
-    steps:
-      - uses: actions/checkout@v4
+Included validation scenarios in test cases and code review guidelines.
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: npm ci
-
-      # IMPORTANT: Export Secrets as VITE_ env vars
-      - name: Inject Vite env variables
-        run: |
-          echo "VITE_API_URL=${{ secrets.API_URL }}" >> $GITHUB_ENV
-          echo "VITE_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
-
-      - name: Build app
-        run: npm run build
-
-👉 Result:
-
-During the npm run build, Vite now sees:
-
-process.env.VITE_API_URL
-process.env.VITE_CLIENT_ID
-
-and exposes them globally as:
-
-import.meta.env.VITE_API_URL
-import.meta.env.VITE_CLIENT_ID
 
 
 ---
 
-✅ After build, inside React:
-
-const apiUrl = import.meta.env.VITE_API_URL;
-console.log(apiUrl);
-
-Your CI-built version now has those values baked into the bundle.
-
-
----
-
-⚠️ Important Notes (so you don’t run into issues)
-
-1️⃣ The values become public in the final JS bundle
-
-Anything you expose via import.meta.env ends up visible in browser DevTools.
-So only use:
-
-Public API URLs
-
-Public client IDs
-
-Feature flags
-
-
-Do NOT include:
-
-Private API keys
-
-Secrets
-
-Tokens
-
-
-2️⃣ These values will not exist during local dev unless you run a local .env
-
-Create a .env.local:
-
-VITE_API_URL=http://localhost:5000
-VITE_CLIENT_ID=dev-123
-
-
----
-
-🟢 Summary — What you need to do
-
-✔ Add GitHub secrets:
-
-API_URL
-
-CLIENT_ID
-
-
-✔ Inject them as VITE_ variables:
-
-echo "VITE_API_URL=${{ secrets.API_URL }}" >> $GITHUB_ENV
-
-✔ Build your Vite app
-
-npm run build
-
-✔ Use in app:
-
-import.meta.env.VITE_API_URL
-
-
----
-
-If you want, I can provide:
-
-A complete workflow file for build + deploy
-
-A safe classification of what values can be baked into frontend vs runtime
-
-Automatic validation of missing env values during build
-
-
-Just tell me!
+If you want it even shorter (one-liner RCA) or in a specific template your team uses, tell me and I’ll tailor it.
