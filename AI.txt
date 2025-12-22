@@ -197,3 +197,33 @@ Provide a production-ready MSAL architecture for React
 
 
 Just tell me.
+
+
+
+import { PublicClientApplication, EventType } from "@azure/msal-browser";
+
+// MSAL configuration
+export const msalConfig = {
+  auth: {
+    clientId: import.meta.env.VITE_CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${import.meta.env.VITE_TENANT_ID}`,
+    redirectUri: window.location.origin,
+  },
+  cache: {
+    cacheLocation: "localStorage",   // or "sessionStorage"
+    storeAuthStateInCookie: false,
+  },
+};
+
+// Create ONE singleton MSAL instance
+export const msalInstance = new PublicClientApplication(msalConfig);
+
+// Optional but recommended: set active account automatically
+msalInstance.addEventCallback((event) => {
+  if (
+    event.eventType === EventType.LOGIN_SUCCESS &&
+    event.payload?.account
+  ) {
+    msalInstance.setActiveAccount(event.payload.account);
+  }
+});
