@@ -1,6 +1,199 @@
-- name: Build UI
-  run: |
-    export VITE_API_URL="${{ secrets.API_URL }}"
-    export VITE_CLIENT_ID="${{ secrets.CLIENT_ID }}"
-    npm ci
-    npm run build
+Best practice is: you do NOT “manually” regenerate tokens at all.
+With MSAL the library handles refresh automatically — your job is just to always call acquireTokenSilent when you need a token.
+
+Here is the clean, correct pattern for React + MSAL.
+
+
+---
+
+🔑 Key principle (very important)
+
+> Never cache or track access-token expiry yourself.
+Always ask MSAL for a token when you need one.
+
+
+
+MSAL will:
+
+Return a valid cached access token if it’s still valid
+
+Automatically use the hidden refresh token if expired
+
+Fall back to interactive login only if required
+
+
+
+---
+
+✅ Correct way to refresh access tokens
+
+1️⃣ Store the authenticated account (once)
+
+After login, set the active account:
+
+const { instance } = useMsal();
+
+await instance.loginPopup(loginRequest);
+
+const account = instance.getAllAccounts()[0];
+instance.setActiveAccount(account);
+
+> This is important — acquireTokenSilent depends on an active account.
+
+
+
+
+---
+
+2️⃣ Always call acquireTokenSilent before API calls
+
+Do NOT do this only in Login component.
+
+Create a central token helper.
+
+tokenService.ts
+
+import { InteractionRequiredAuthError } from "@azure/msal-browser";
+import { msalInstance } from "./msalInstance";
+
+const tokenRequest = {
+  scopes: ["api://<api-client-id>/access_as_user"]
+};
+
+export async function getAccessToken(): Promise<string> {
+  const account = msalInstance.getActiveAccount();
+
+  if (!account) {
+    throw new Error("No active account. User not logged in.");
+  }
+
+  try {
+    const response = await msalInstance.acquireTokenSilent({
+      ...tokenRequest,
+      account
+    });
+
+    return response.accessToken;
+
+  } catch (error) {
+    if (error instanceof InteractionRequiredAuthError) {
+      const response = await msalInstance.acquireTokenPopup(tokenRequest);
+      return response.accessToken;
+    }
+    throw error;
+  }
+}
+
+
+---
+
+3️⃣ Use it everywhere (API calls, effects, services)
+
+const token = await getAccessToken();
+
+fetch("/api/data", {
+  headers: {
+    Authorization: `Bearer ${token}`
+  }
+});
+
+MSAL automatically:
+
+Checks cache
+
+Refreshes silently
+
+Returns a fresh token if needed
+
+
+
+---
+
+❌ What NOT to do
+
+❌ Do NOT store expiresOn
+
+❌ Do NOT manually refresh tokens
+
+❌ Do NOT re-login users on expiry
+
+❌ Do NOT store access tokens in localStorage yourself
+
+❌ Do NOT decode token to check expiry
+
+
+MSAL already does all of this correctly.
+
+
+---
+
+🧠 Why this works
+
+In SPA:
+
+Refresh tokens are not exposed
+
+MSAL stores them securely
+
+Token refresh happens via hidden iframe + OAuth flow
+
+
+
+---
+
+🔄 What happens on refresh failure
+
+If:
+
+User session expired
+
+Consent needed
+
+Conditional Access triggered
+
+
+MSAL throws:
+
+InteractionRequiredAuthError
+
+You must then call:
+
+acquireTokenPopup() // or acquireTokenRedirect()
+
+
+---
+
+🧪 Bonus: handle token refresh globally
+
+For Axios:
+
+axios.interceptors.request.use(async config => {
+  const token = await getAccessToken();
+  config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+
+---
+
+🔚 Final answer
+
+✔️ Best way to generate a new access token:
+Always call acquireTokenSilent() when you need a token.
+
+✔️ MSAL handles expiration and refresh automatically.
+✔️ You don’t need timers, expiry checks, or manual refresh logic.
+
+
+---
+
+If you want, I can:
+
+Review your current Login component
+
+Help move auth logic out of UI components
+
+Provide a production-ready MSAL architecture for React
+
+
+Just tell me.
