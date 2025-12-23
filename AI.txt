@@ -233,3 +233,5 @@ msalInstance.addEventCallback((event) => {
 
 
 const re = /^(?:[A-Za-z0-9]+|_+)$/;
+
+const re = /^(?:[A-Za-z0-9]+|_{10})$/;
