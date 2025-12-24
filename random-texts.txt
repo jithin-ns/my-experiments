@@ -1,69 +1,241 @@
-Description:
+Here’s a clear, professional, and security-reviewer-ready explanation of how Azure Entra authentication, tokens, scopes, roles, and API authorization should work together, with references to Microsoft documentation.
 
-Create a comprehensive Low-Level Design (LLD) document for the React + TypeScript UI application. The LLD should provide a detailed blueprint of the frontend architecture, component structure, data flow, state management, API integrations, routing, and reusability plans. This design will serve as a reference for the development team and ensure alignment with functional and non-functional requirements.
 
-The LLD must align with the approved High-Level Design (HLD), UI/UX wireframes, and backend interface specifications (if available).
+---
 
-Scope of LLD:
+✅ 1. Token Types & Their Purpose
 
-Component breakdown and hierarchy
+🔹 ID Token
 
-TypeScript interfaces/types
+Used to authenticate the user to the client application (FE).
 
-State management approach (e.g., React Context, Redux, Zustand, etc.)
+Contains information about the user (claims like oid, name, preferred_username).
 
-API integration design (Axios/Fetch, service layers, etc.)
+Not intended for authorizing API calls. Use it to identify the user in the UI, not for backend enforcement.
 
-Routing strategy (React Router setup)
+Microsoft Docs: ID Token is for authentication. 
 
-Folder structure and naming conventions
 
-Reusability and modularity approach
+🔹 Access Token
 
-Form handling and validation strategy (Formik, React Hook Form, etc.)
+Used to access protected APIs (backend services or Microsoft Graph).
 
-Error handling and loading states
+Contains the essential claims the API trusts for authorization (scope scp, optional roles roles, aud, oid).
 
-Theming and styling approach (e.g., CSS Modules, Styled Components, Tailwind)
+API must validate this token. Clients should NEVER validate it. 
 
-Performance considerations (code-splitting, memoization, lazy loading)
+Backend must verify signature, issuer, audience, expiration, etc., and then check scopes/roles to authorize requests.
 
-Testing strategy (unit/component tests)
 
-✅ Definition of Done (DoD):
 
- LLD document created and stored in the project’s documentation repository (e.g., Confluence, Git repo, Notion)
+---
 
- Covers all key modules/components and their interaction
+✅ 2. Frontend (FE) Configurations & Audience (aud)
 
- Includes diagrams or visuals where applicable (component tree, data flow, etc.)
+What determines the aud claim?
 
- Reviewed internally by team lead or architect
+The aud in the access token must be the identifier of the resource being accessed (your backend API):
 
- LLD reviewed and approved by relevant stakeholders (e.g., Tech Lead, UI/UX, QA)
+This is usually the Application ID URI you set for the backend app (e.g., api://<backend-client-id>).
 
- Linked to relevant JIRA Epics or Stories
+If the FE requests a token with this audience, Azure Entra issues a token with aud == backend.
 
- Clearly reflects scope, constraints, and assumptions
+Otherwise, tokens meant for MS Graph will have aud == Graph and won’t work for your backend.
 
-✅ Acceptance Criteria:
 
-✔️ The LLD document includes a detailed component breakdown and the data flow between components.
+FE must request an access token like:
 
-✔️ All API calls and their handling mechanisms are documented.
+const tokenResponse = await msalInstance.acquireTokenSilent({
+  scopes: ["api://<backend-client-id>/rules.save-to-live"]
+});
 
-✔️ State management solution is explained with diagrams or flowcharts.
+This ensures the access token’s aud is your backend API. 
 
-✔️ The document explains the error handling and validation strategy.
+Application ID URI
 
-✔️ Type definitions and folder structures are well-defined and align with project standards.
+This is for the backend API.
 
-✔️ Routing and navigation flows are clearly described.
+Example: api://<backend-client-id> → then add scopes under this API. 
 
-✔️ The LLD is reviewed and signed off by both frontend and backend stakeholders.
 
-✔️ There is a clear plan for component reusability and separation of concerns.
 
-✔️ Document includes a testing strategy and tools to be used.
+---
 
-✔️ There are no major open questions or ambiguities post-review.
+✅ 3. Do You Need a Separate App Registration for BE?
+
+Yes — best practice:
+
+Frontend App Registration → Represents the client SPA.
+
+Backend App Registration → Represents the protected API.
+
+
+This separation allows proper issuance and validation of tokens, audience scopes, and access control. 
+
+
+---
+
+✅ 4. User Must Be Authorized to Access the BE App?
+
+Yes — but this depends on settings:
+
+If the backend app is configured with “User assignment required”, then the user must be assigned to it (or through a group/app role). 
+
+If not, just requesting consent for the scopes and having permission may be enough.
+
+
+This is why your earlier invalid_grant occurred — user wasn’t assigned or consented to required permissions.
+
+
+---
+
+✅ 5. Your Current UI Token Acquisition Flow
+
+Let’s analyze your proposed sequence and confirm it:
+
+✔ UI authenticates user using MSAL.
+✔ FE requests access token for backend API using backend scope.
+✔ FE requests access token for Graph API using "User.Read".
+✔ FE sends API token with each API request.
+
+➡️ This is fundamentally correct — each API call from FE should carry a bearer token that has the correct audience and scope for that API. 
+
+Important: The access token for backend and Graph must be separate tokens, because they have different audiences.
+
+
+---
+
+✅ 6. What Does ap://guid/.default Mean?
+
+/.default is a shortcut scope that indicates all statically defined delegated scopes granted to the app.
+
+It doesn’t dynamically filter based on roles.
+
+If your backend API has multiple scopes, asking for .default can return all of them if consent has been given. 
+
+
+⚠ This does not yield selective scopes based on role — it’s just a convenience to get all previously consented scopes.
+
+
+---
+
+✅ 7. Scopes vs. Roles
+
+Scopes
+
+Represent permissions for APIs that the client app can ask for on behalf of the user.
+
+They are delegated permissions: the API receives a token that indicates what operations the user allowed. 
+
+
+App Roles
+
+Represent role-based permissions defined within the API itself.
+
+If configured, Azure Entra includes them in the roles claim of the access token if the user is assigned to those roles. 
+
+
+
+---
+
+✅ 8. Should UI Restrict API Call Based on Scopes?
+
+Yes, ideally both layers should enforce checks:
+
+UI: Hide unauthorized features based on token’s scopes/roles → improves UX.
+
+API: Must enforce server-side authorization based on scopes/roles in the token → security boundary.
+
+
+UI checks help UX but are not sufficient for security.
+
+
+---
+
+✅ 9. How Should Backend Restrict Access Using Scopes?
+
+On each API endpoint:
+
+1. Validate access token:
+
+Signature
+
+aud equals your backend API
+
+iss, expiry, etc.
+
+
+
+2. Check claims:
+
+scp for required scope (like rules.save-to-live)
+
+or roles if role-based access is used
+
+
+
+
+Example (pseudocode):
+
+if (!token.scp.includes("scope.api1")) {
+  return 403 Forbidden
+}
+
+➡️ Backend enforces least privilege based on token claims. 
+
+
+---
+
+✅ 10. Role vs. Scope for Authorization
+
+Role in token:
+
+More static; represents user’s role assignment (e.g., Admin, Manager).
+
+Issued when configured in API registration → client app and user assigned roles. 
+
+
+Scope:
+
+Represents permission to call specific API functionality.
+
+
+Best practice for API:
+
+Use scopes for coarse-grained API access
+
+Use roles or groups for fine-grained authorization (e.g., Admin vs Basic User)
+
+
+
+---
+
+📌 Summary for Cyber/Security Reviewers (Copy-Paste)
+
+> Design Overview — Azure Entra ID Authentication & Authorization (OAuth2 + OIDC)
+
+• Frontend obtains ID Token (for UI authentication) and Access Tokens (for API calls).
+• Access Tokens carry the aud (audience) equal to the API’s Application ID URI (e.g., api://<backend-id>).
+• Each protected resource defines scopes; backend validates the token and checks required scopes.
+• App roles can be defined and included in access tokens for role-based authorization when necessary.
+• The backend must validate tokens (signature & claims) and enforce access control based on scopes and/or roles — UI checks alone are insufficient.
+• The Azure Entra ID issues tokens based on scope consent; .default is a special scope for all granted scopes, not filtered by role.
+• Token validation and authorization logic should follow Microsoft’s recommended patterns for Protected Web APIs. 
+
+
+
+
+---
+
+📌 Useful Microsoft Documentation Links
+
+🔗 Access Tokens overview — https://learn.microsoft.com/entra/identity-platform/access-tokens 
+🔗 Scopes & permissions — https://learn.microsoft.com/entra/identity-platform/scopes-oidc 
+🔗 Expose API & scopes setup — https://learn.microsoft.com/entra/identity-platform/quickstart-configure-app-expose-web-apis 
+🔗 Protect Web API (verify scopes/roles) — https://learn.microsoft.com/entra/identity-platform/scenario-protected-web-api-verification-scope-app-roles 
+🔗 Configure group claims & app roles — https://learn.microsoft.com/security/zero-trust/develop/configure-tokens-group-claims-app-roles 
+
+
+---
+
+If you want, I can turn this into an email-ready (or Confluence-ready) formatted document for your reviewers.
