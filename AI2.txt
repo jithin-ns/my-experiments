@@ -1,1 +1,260 @@
 
+Below is the **standard, recommended way** to implement **Microsoft Entra ID (Azure AD) authentication in an Angular app** using **MSAL Angular**, with a focus on:
+
+* UI-side steps only
+* Checking auth status in a **Header component**
+* Clean, production-ready structure
+
+---
+
+## 1. Install required packages
+
+From your Angular project root:
+
+```bash
+npm install @azure/msal-browser @azure/msal-angular
+```
+
+---
+
+## 2. Configure MSAL (core setup)
+
+Create a file like `src/app/auth-config.ts`:
+
+```ts
+import { Configuration, LogLevel } from '@azure/msal-browser';
+
+export const msalConfig: Configuration = {
+  auth: {
+    clientId: 'YOUR_CLIENT_ID',
+    authority: 'https://login.microsoftonline.com/YOUR_TENANT_ID',
+    redirectUri: 'http://localhost:4200',
+  },
+  cache: {
+    cacheLocation: 'localStorage',
+    storeAuthStateInCookie: false,
+  },
+  system: {
+    loggerOptions: {
+      logLevel: LogLevel.Info,
+      piiLoggingEnabled: false,
+    },
+  },
+};
+
+export const loginRequest = {
+  scopes: ['User.Read'], // basic Microsoft Graph scope
+};
+```
+
+---
+
+## 3. Register MSAL in `AppModule`
+
+In `app.module.ts`:
+
+```ts
+import { MsalModule, MsalRedirectComponent } from '@azure/msal-angular';
+import { PublicClientApplication, InteractionType } from '@azure/msal-browser';
+import { msalConfig } from './auth-config';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [
+    BrowserModule,
+    MsalModule.forRoot(
+      new PublicClientApplication(msalConfig),
+      {
+        interactionType: InteractionType.Redirect,
+        authRequest: {
+          scopes: ['User.Read'],
+        },
+      },
+      {
+        interactionType: InteractionType.Redirect,
+        protectedResourceMap: new Map(),
+      }
+    ),
+  ],
+  bootstrap: [AppComponent, MsalRedirectComponent],
+})
+export class AppModule {}
+```
+
+⚠️ `MsalRedirectComponent` **must be bootstrapped**.
+
+---
+
+## 4. Handle authentication lifecycle in `AppComponent`
+
+This ensures MSAL processes redirects correctly.
+
+```ts
+import { Component, OnInit } from '@angular/core';
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
+import { EventMessage, EventType } from '@azure/msal-browser';
+import { filter } from 'rxjs/operators';
+
+@Component({
+  selector: 'app-root',
+  template: '<router-outlet></router-outlet>',
+})
+export class AppComponent implements OnInit {
+  constructor(
+    private msalService: MsalService,
+    private msalBroadcastService: MsalBroadcastService
+  ) {}
+
+  ngOnInit(): void {
+    this.msalBroadcastService.msalSubject$
+      .pipe(filter((msg: EventMessage) => msg.eventType === EventType.LOGIN_SUCCESS))
+      .subscribe(() => {
+        const accounts = this.msalService.instance.getAllAccounts();
+        if (accounts.length > 0) {
+          this.msalService.instance.setActiveAccount(accounts[0]);
+        }
+      });
+  }
+}
+```
+
+---
+
+## 5. Create an Auth Service (recommended)
+
+This keeps your Header clean.
+
+```ts
+import { Injectable } from '@angular/core';
+import { MsalService } from '@azure/msal-angular';
+import { loginRequest } from './auth-config';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  constructor(private msalService: MsalService) {}
+
+  login(): void {
+    this.msalService.loginRedirect(loginRequest);
+  }
+
+  logout(): void {
+    this.msalService.logoutRedirect();
+  }
+
+  isLoggedIn(): boolean {
+    return this.msalService.instance.getAllAccounts().length > 0;
+  }
+
+  getUserName(): string | null {
+    const account = this.msalService.instance.getActiveAccount();
+    return account?.name ?? null;
+  }
+}
+```
+
+---
+
+## 6. Use authentication status in Header component
+
+### `header.component.ts`
+
+```ts
+import { Component } from '@angular/core';
+import { AuthService } from '../auth.service';
+
+@Component({
+  selector: 'app-header',
+  templateUrl: './header.component.html',
+})
+export class HeaderComponent {
+  constructor(public authService: AuthService) {}
+
+  login(): void {
+    this.authService.login();
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
+}
+```
+
+### `header.component.html`
+
+```html
+<nav>
+  <button *ngIf="!authService.isLoggedIn()" (click)="login()">
+    Sign In
+  </button>
+
+  <div *ngIf="authService.isLoggedIn()">
+    Welcome {{ authService.getUserName() }}
+    <button (click)="logout()">Sign Out</button>
+  </div>
+</nav>
+```
+
+✅ This automatically reflects authentication state.
+
+---
+
+## 7. (Optional) Protect routes with a Guard
+
+```ts
+import { MsalGuard } from '@azure/msal-angular';
+
+const routes: Routes = [
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [MsalGuard],
+  },
+];
+```
+
+---
+
+## 8. (Optional) Call APIs with access tokens
+
+MSAL automatically attaches tokens if you configure `protectedResourceMap`.
+
+Example:
+
+```ts
+protectedResourceMap: new Map([
+  ['https://graph.microsoft.com/v1.0/me', ['User.Read']],
+]);
+```
+
+---
+
+## Mental model (important)
+
+* **MSAL handles tokens & sessions**
+* UI checks:
+
+  * `getAllAccounts().length > 0` → logged in
+  * `getActiveAccount()` → current user
+* Header only **reads auth state**, never manages tokens directly
+
+---
+
+## Summary of UI-side flow
+
+1. App loads → MSAL initializes
+2. User clicks **Sign In**
+3. Redirect to Entra ID
+4. Redirect back → MSAL stores account
+5. Header reads auth state via `AuthService`
+6. UI updates automatically
+
+---
+
+If you want, I can:
+
+* Adapt this for **popup login** instead of redirect
+* Show **standalone Angular (v15+)** setup
+* Add **role/claim-based UI rendering**
+* Show **silent token refresh flow**
+
+Just tell me 👍
