@@ -1,33 +1,170 @@
-Sure — here’s an updated version of the email including the two additional points. Wording is adjusted so it reads natural and professional.
+Your problem is mostly syntax + how GitHub Actions handles environment secrets + how Vite reads env vars. There are a few critical issues:
 
 
 ---
 
-Hi Team,
+✅ 1. Fix the workflow syntax
 
-As part of Microsoft’s retirement of the SharePoint Add-In model and ACS authentication, I have reviewed our current application and evaluated the impact. One important clarification is that the ongoing effort is not just a UI revamp, but a complete UI re-platforming (React front-end + modern API stack).
+Your YAML has formatting errors. Here’s a cleaned and corrected version of your workflow that will actually inject environment secrets:
 
-After going through the existing solution, I have prepared a breakdown of the work that would be required for a full re-platform. There are more than 30 pages to rebuild (possibly more), and given the scope and complexity, this cannot be completed within the short period remaining before the SharePoint Add-In retirement deadline (April 2nd, 2026).
+name: build the app artifact
 
-In our current state, we have two major challenges:
+on:
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+        default: dev
 
-1. The application uses ACS authentication globally, which means all pages will be impacted when ACS retires.
-2. Several pages use Add-In features directly, which will stop functioning after the retirement date.
+jobs:
+  build:
+    name: Build React App
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
 
-Given these constraints, I propose a phased migration strategy. The first step is to ensure the existing application can continue to function beyond April 2nd, 2026. For that, if we migrate the authentication from ACS to Entra (formerly Azure AD), the current SharePoint application can remain operational while the new React application is being developed. This avoids any user disruption due to the Add-In retirement.
+    outputs:
+      artifact-name: react-build
 
-The core modernization effort will then focus on the pages that make use of Add-In features. These will be prioritized in Phase-1 of the React application, focusing primarily on pages that are both Add-In dependent and business-critical. The remaining pages can be taken up in subsequent phases based on complexity and business priority.
+    steps:
+      - uses: actions/checkout@v4
 
-As part of this approach, we will require an experienced .NET developer/architect to assess the feasibility of implementing Entra-based authentication for the existing SharePoint solution and to validate integration design options for the new application.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
 
-Since the target solution is effectively a new application, we can take the opportunity to ensure that it adopts modern development standards, tools, and best practices. If any business approvals or compliance clearances are required for new technology usage, hosting models, or dependency changes, they may need to be initiated in advance to avoid blocking timelines.
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "@britishairways-ent:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          echo "registry=https://registry.npmjs.org/" >> .npmrc
+          echo "always-auth=true" >> .npmrc
 
-The only limitation with this approach is that we will need to maintain two applications for a period of time — the existing SharePoint application (with updated authentication) and the new React application — until the full modernization is completed.
+      - name: Install dependencies
+        env:
+          VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          VITE_ENTRA_CLIENT_ID: ${{ secrets.ENTRA_CLIENT_ID }}
+          VITE_ENTRA_TENANT_ID: ${{ secrets.ENTRA_TENANT_ID }}
+          VITE_ENV_NAME: ${{ secrets.ENV_NAME }}
+        run: npm ci
 
-This phased approach removes the immediate risk posed by the Add-In retirement, keeps the application accessible for users, and allows us to re-platform the solution in a controlled and prioritized manner.
+      - name: Build React app
+        env:
+          VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          VITE_ENTRA_CLIENT_ID: ${{ secrets.ENTRA_CLIENT_ID }}
+          VITE_ENTRA_TENANT_ID: ${{ secrets.ENTRA_TENANT_ID }}
+          VITE_ENV_NAME: ${{ secrets.ENV_NAME }}
+        run: npm run build
 
-Regards,
-Jithin
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-build
+          path: dist
+
+
 ---
 
-If you want, I can also give you a shorter executive summary version or a more assertive decision-oriented version — just tell me which style you prefer.
+✅ 2. Your main mistake: exporting env vars inside run
+
+This part is the core issue:
+
+export VITE_API_BASE_URL="..."
+
+Each GitHub Actions step runs in a separate shell.
+
+👉 Exporting variables inside run only works within that step, not the next one.
+
+Since Vite needs env vars during build, they must be available in the build step.
+
+
+---
+
+✅ 3. Correct way: use env: block
+
+This is the most reliable approach:
+
+- name: Build React app
+  env:
+    VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+  run: npm run build
+
+GitHub injects them properly into the process environment.
+
+
+---
+
+✅ 4. Secret naming rules (very important)
+
+GitHub secrets:
+
+❌ Cannot contain spaces
+✅ Must use underscores
+
+So these are invalid:
+
+API BASE URL
+ENTRA CLIENT ID
+
+They must be:
+
+API_BASE_URL
+ENTRA_CLIENT_ID
+ENTRA_TENANT_ID
+ENV_NAME
+
+Go to:
+
+👉 Settings → Environments → dev → Secrets
+
+Rename them accordingly.
+
+
+---
+
+✅ 5. Vite requirement: must start with VITE_
+
+You already did this right 👍
+
+Vite only exposes env vars prefixed with:
+
+VITE_
+
+In your React code:
+
+import.meta.env.VITE_API_BASE_URL
+
+
+---
+
+✅ 6. Optional improvement: set env once for entire job
+
+Instead of repeating in each step:
+
+jobs:
+  build:
+    env:
+      VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      VITE_ENTRA_CLIENT_ID: ${{ secrets.ENTRA_CLIENT_ID }}
+
+Then all steps inherit it.
+
+
+---
+
+🚨 Quick checklist
+
+Make sure all of these are true:
+
+✔ Secrets have no spaces in names
+✔ Using env: not export
+✔ Build step has env variables
+✔ Environment name matches GitHub environment
+✔ Secrets exist inside that environment
+✔ Variables start with VITE_
+✔ YAML indentation is correct
+
+
+---
+
+If you want, paste your GitHub logs error message, and I can pinpoint exactly where it’s failing.
