@@ -1,59 +1,11 @@
-name: build the app artifact
+We're starting the migration of the existing classic SharePoint application to a modern SPFx solution. Since UAT is actively used by other teams, we'd like to avoid making changes there during development.
 
-on:
-  workflow_call:
-    inputs:
-      env:
-        type: string
-        required: true
-        default: dev
+Could you please help us with:
 
-jobs:
-  build:
-    name: Build React App
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.env }}
+Creating a new Modern Team Site (something like /sites/uat-cita-modern) for development/testing
 
-    outputs:
-      artifact-name: react-build
+Migrating the application-related lists (Department, Category with lookup relationships, and other relevant lists) from/sites/uat-cita to the new site
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+This will be used only internally for development and validation before we touch UAT/Prod.
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Configure npm for GitHub Packages
-        run: |
-          echo "@britishairways-ent:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
-          echo "registry=https://registry.npmjs.org/" >> .npmrc
-          echo "always-auth=true" >> .npmrc
-
-      # ✅ Create Vite environment file from GitHub environment secrets
-      - name: Create .env file
-        run: |
-          echo "VITE_API_BASE_URL=${{ secrets.API_BASE_URL }}" >> .env
-          echo "VITE_ENTRA_CLIENT_ID=${{ secrets.ENTRA_CLIENT_ID }}" >> .env
-          echo "VITE_ENTRA_TENANT_ID=${{ secrets.ENTRA_TENANT_ID }}" >> .env
-          echo "VITE_ENV_NAME=${{ secrets.ENV_NAME }}" >> .env
-
-      # Optional debug step (remove after confirming it works)
-      # - name: Debug env file
-      #   run: cat .env
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build React app
-        run: npm run build
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: react-build
-          path: dist
+Let me know if you need any additional details from our side. Thanks a lot!
