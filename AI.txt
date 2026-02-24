@@ -1,11 +1,129 @@
-We're starting the migration of the existing classic SharePoint application to a modern SPFx solution. Since UAT is actively used by other teams, we'd like to avoid making changes there during development.
+Excellent 👌 this is exactly the right time to formalize architecture thinking.
 
-Could you please help us with:
+I’ll give you **clean, professional, architecture-level bullet points** that you can directly paste into your “To Be” document and refine.
 
-Creating a new Modern Team Site (something like /sites/uat-cita-modern) for development/testing
+---
 
-Migrating the application-related lists (Department, Category with lookup relationships, and other relevant lists) from/sites/uat-cita to the new site
+# 1️⃣ To-Be Authentication Overview
 
-This will be used only internally for development and validation before we touch UAT/Prod.
+*(SPFx-based Modern Architecture)*
 
-Let me know if you need any additional details from our side. Thanks a lot!
+* The application will be built using **SharePoint Framework (SPFx)** and hosted within SharePoint Online.
+* User authentication will be handled natively through **Microsoft Entra ID (Azure AD)**.
+* No separate login mechanism will be implemented.
+* Authentication will leverage the logged-in Microsoft 365 user session.
+* Authorization will be controlled using:
+
+  * SharePoint site-level permissions
+  * SharePoint list-level permissions (where required)
+* If external APIs are introduced, they will be secured using:
+
+  * Entra ID App Registration
+  * OAuth 2.0 token-based authentication
+* No legacy SharePoint Add-in authentication model will be used.
+
+---
+
+# 2️⃣ To-Be Functional Overview
+
+* Application UI will be rebuilt as Modern SPFx Web Parts.
+* The application will be hosted in a dedicated Modern SharePoint site.
+* Data will be stored in SharePoint Lists.
+* List relationships (e.g., Department → Category) will be maintained using Lookup columns.
+* UI components will:
+
+  * Fetch data dynamically from SharePoint Lists
+  * Render based on user permissions
+  * Support form submissions and updates
+* The solution will support:
+
+  * Modular UI components
+  * Reusable business logic
+  * Extensible design for future enhancements
+* No classic publishing pages or script editor web parts will be used.
+
+---
+
+# 3️⃣ Actions – What We Are Doing
+
+* Creating a new Modern SharePoint site for development and testing.
+* Migrating required SharePoint lists (structure and data) from the classic site.
+* Rebuilding UI using SPFx (React-based components).
+* Replacing legacy Add-in model with SPFx-based architecture.
+* Implementing modern authentication via Entra ID.
+* Packaging solution as `.sppkg` and deploying through Tenant App Catalog.
+* Testing within hosted SharePoint workbench before production rollout.
+* Planning phased rollout: Development → UAT → Production.
+
+---
+
+# 4️⃣ SharePoint Data Access Strategy
+
+* Primary data source will be SharePoint Lists within the application site.
+* Data access will be performed using:
+
+  * SPFx `SPHttpClient`, or
+  * PnPjs library (recommended for cleaner abstraction).
+* Data access will follow site-context boundary:
+
+  * Web parts will access lists within the current site collection.
+* Cross-site list access will be avoided unless architecturally necessary.
+* Lookup relationships will be preserved during migration.
+* List schema consistency (internal column names) will be maintained to prevent breaking integrations.
+* Role-based data visibility will be implemented using SharePoint permissions rather than custom role tables where possible.
+
+---
+
+# 5️⃣ Microsoft Graph API Integration – Is It Needed?
+
+Short answer: **Not necessarily.**
+
+Use Microsoft Graph only if the application requires:
+
+* User profile data beyond basic SharePoint context
+* Organization hierarchy (manager reporting structure)
+* Access to Teams, Planner, Calendar, Mail
+* Cross-tenant or cross-workload integration
+* Group membership validation
+
+If your application only:
+
+* Reads/writes SharePoint lists
+* Uses logged-in user context
+* Manages permissions via SharePoint
+
+👉 Microsoft Graph API is NOT required.
+
+SPFx + SharePoint REST API is sufficient.
+
+---
+
+# 🎯 Practical Recommendation for Your Case
+
+Based on what you described so far:
+
+* You are migrating a list-driven application
+* No mention of Teams/Planner/Calendar integration
+* Focus is data + UI modernization
+
+So:
+
+✔ SharePoint REST via SPFx is enough
+✔ Graph API likely NOT needed in Phase 1
+✔ Keep architecture simple
+
+You can always introduce Graph later if business requires it.
+
+---
+
+# 🔥 Executive-Level Summary (Optional Add to Document)
+
+> The proposed architecture replaces the legacy SharePoint Add-in model with a modern SPFx-based solution leveraging SharePoint Online and Microsoft Entra ID for authentication, while preserving data integrity through controlled list migration and modern data access patterns.
+
+---
+
+If you want, next I can:
+
+* Help you draft a clean comparison table: **As-Is vs To-Be**
+* Or prepare a simple architecture diagram (described textually)
+* Or help you identify migration risks for management review
