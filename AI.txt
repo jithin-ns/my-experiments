@@ -1,31 +1,60 @@
-Perfect 👌 Let’s do this properly using PnPjs, which is the cleanest way inside SPFx.
+Good catch 👌 — and this is a version misunderstanding, not an npm issue.
 
-Assume:
+There is no separate package called @pnp/spfx in the registry anymore in modern PnP v3+.
 
-List name: Test Users
+That package existed in older versions.
 
-You are inside an SPFx React web part
 
-You already installed PnP packages
+---
+
+✅ Correct Packages for Modern SPFx (PnP v3+)
+
+You only need:
+
+npm install @pnp/sp --save
+
+That’s it.
+
+You do NOT install @pnp/spfx separately.
+
+
+---
+
+🔹 Why the Confusion?
+
+Older documentation used:
+
+@pnp/sp
+@pnp/spfx
+
+In modern PnP (v3+):
+
+SPFx integration is built into @pnp/sp
+
+You just import SPFx from @pnp/sp
 
 
 
 ---
 
-🔹 1️⃣ Install PnP (If Not Installed)
-
-npm install @pnp/sp @pnp/spfx --save
+✅ Correct Modern Setup (Working Code)
 
 
 ---
 
-🔹 2️⃣ Configure PnP in Your Web Part (Important)
+1️⃣ Install
 
-Inside your main web part file:
+npm install @pnp/sp
+
+
+---
+
+2️⃣ Configure in Web Part
 
 // YourWebPart.ts
 
 import { spfi, SPFx } from "@pnp/sp";
+import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
 
@@ -37,126 +66,51 @@ protected onInit(): Promise<void> {
   });
 }
 
-Now _sp is connected to your current site.
+That’s it. No @pnp/spfx package required.
 
 
 ---
 
-🔹 3️⃣ Pass SP Instance to React Component
+3️⃣ React Component Usage
 
-Inside render():
+Same as I shared earlier:
 
-this.domElement.innerHTML = "";
-const element = React.createElement(App, {
-  sp: this._sp
-});
-ReactDom.render(element, this.domElement);
+const items = await sp.web.lists
+  .getByTitle("Test Users")
+  .items();
 
 
 ---
 
-🔹 4️⃣ React Component – Fetch List Items
+🔥 If You Still See Errors
 
-Example: Get All Items from “Test Users”
+Run:
 
-// App.tsx
+npm list @pnp/sp
 
-import * as React from "react";
-import { useEffect, useState } from "react";
-import { SPFI } from "@pnp/sp";
+Make sure version is:
 
-interface IProps {
-  sp: SPFI;
-}
+3.x.x
 
-interface ITestUser {
-  Id: number;
-  Title: string;
-}
+If not, update:
 
-const App: React.FC<IProps> = ({ sp }) => {
-  const [users, setUsers] = useState<ITestUser[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const items = await sp.web.lists
-        .getByTitle("Test Users")
-        .items
-        .select("Id", "Title")();
-
-      setUsers(items);
-    };
-
-    fetchData();
-  }, []);
-
-  return (
-    <div>
-      <h2>Test Users List</h2>
-      <ul>
-        {users.map(user => (
-          <li key={user.Id}>{user.Title}</li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-export default App;
+npm install @pnp/sp@latest
 
 
 ---
 
-🔹 What This Does
+🎯 Summary
 
-Connects to current SharePoint site
+Old Docs	Modern Setup
 
-Reads list named Test Users
-
-Fetches Id + Title column
-
-Displays them in a list
+@pnp/spfx	❌ Not needed
+@pnp/sp	✅ Required
+SPFx(this.context)	✅ Still used
 
 
 
 ---
 
-🔹 If Your List Has Custom Columns
+You’re not doing anything wrong — just encountering outdated tutorials.
 
-Example columns:
-
-Name
-
-Email
-
-Department (Lookup)
-
-
-Update select:
-
-.select("Id", "Title", "Email", "Department/Title")
-.expand("Department")
-
-
----
-
-🔥 Important Notes
-
-1️⃣ List name must match exactly
-2️⃣ Internal column names matter
-3️⃣ User must have read permission
-4️⃣ This works only in Hosted Workbench (not local standalone)
-
-
----
-
-🔎 If You Don’t Want PnP (Using SPHttpClient)
-
-Let me know — I’ll give that version too.
-
-But PnP is strongly recommended for enterprise SPFx.
-
-
----
-
-If you paste your list column structure, I can tailor the exact query for your schema.
+If you'd like, I can give you a clean minimal SPFx + PnP starter template structure so you don't run into version conflicts again.
