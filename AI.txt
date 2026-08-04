@@ -15,36 +15,19 @@ For a fixed-price, fixed-scope project, such changes should ideally:
 - be accompanied by an appropriate timeline adjustment, or
 - be treated as formal Change Requests (CRs) and scheduled separately from the committed scope.
 
-2. Timeboxing Development Activities
+2. Timeboxing Development Activities & Reducing Context Switching
 
-A structured timeboxing approach could help improve productivity while ensuring critical issues continue to receive attention.
+A structured timeboxing approach, combined with minimizing unnecessary context switching, could significantly improve productivity while ensuring critical issues continue to receive attention.
 
 - Reserve the first half of the day exclusively for planned development work.
-- During this period, developers should only be interrupted for genuine showstopper issues impacting SIT or UAT execution.
-- Avoid posting non-critical requests in group chats during the focused development window.
+- During this period, developers should only be interrupted for genuine showstopper issues impacting SIT or UAT execution — unless it is a genuine showstopper, it can wait.
+- Avoid posting non-critical requests in group chats or assigning ad-hoc tasks during the focused development window.
 - Use the afternoon (after the prioritization call) to address UAT defects, SIT issues, and other agreed priorities.
+- Wherever possible, batch similar work items together and avoid frequent task switching unless absolutely necessary.
 
-3. Reduce Context Switching
+This will help reduce unnecessary interruptions, improve focus, and ensure better quality and predictability in delivery.
 
-Developers are currently expected to switch frequently between development work, SIT defects, UAT defects, and BA-driven rework. This constant context switching impacts productivity and increases the likelihood of defects.
-
-Wherever possible:
-
-- Batch similar work items together.
-- Avoid assigning new tasks immediately unless they are genuinely critical.
-- Reserve "ASAP" or urgent communications for actual business or testing blockers.
-
-4. Improve Communication for Shared Components
-
-Changes to reusable components should be communicated proactively to all dependent developers. A clear communication mechanism for interface or behavior changes would reduce integration issues and unnecessary rework.
-
-5. Improve Reusable Component Design
-
-Where practical, reusable components should be designed to accept raw data while encapsulating formatting and presentation logic internally.
-
-This would improve consistency, reduce duplicated formatting logic, simplify component consumption, and minimize integration defects.
-
-6. Strengthen the Development Process
+3. Strengthen the Development Process
 
 Introducing mandatory Git Pull Request reviews and consistent peer code reviews before merging would help identify design and implementation issues earlier, improve knowledge sharing, and reduce rework during SIT and UAT.
 
