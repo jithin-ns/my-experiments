@@ -1,7 +1,9 @@
+Subject: Following up on our discussion
 Hi [Manager's Name],
 Thanks for our discussion earlier today.
-To summarize, I'm really glad we delivered the current project phase on time. As we enter the maintenance phase, it looks like the day-to-day work will be light and mostly around routine updates.
-Considering my background as a UI Architect/Lead, keeping a senior resource mapped here might not be the best use of project bandwidth or my skills. Since this account doesn't have any heavy architecture requirements right now, I think it would make sense for the organization to align me with another project or initiative where complex UI/Architecture needs exist.
-I’m fully committed to wrapping up my current tasks and ensuring a seamless handoff whenever needed. Let me know how we can plan this best.
+To summarize, I'm really glad we delivered the current project phase on time. As we enter the maintenance phase, the day-to-day work will likely be light and mostly around routine updates.
+Considering my background as a UI Architect/Lead, keeping a senior resource mapped here long-term might not be the most effective use of project bandwidth.
+Are there any upcoming roles or requirements within this account that align with my skills and experience? If not, I think it would make sense for the organization to align me with another project or initiative where complex UI/architecture needs exist.
+I'm fully committed to wrapping up my current tasks and ensuring a seamless handoff whenever needed. Let me know how we can plan this best.
 Best,
 [Your Name]
